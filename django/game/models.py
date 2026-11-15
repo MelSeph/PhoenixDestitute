@@ -44,7 +44,7 @@ class Player(models.Model):
 
 
 class LocalCharacter(models.Model):
-    """A session-owned saved story; deletion revokes play without erasing history."""
+    """A session-owned saved story; explicit deletion permanently purges its data."""
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     session = models.ForeignKey("sessions.Session", on_delete=models.CASCADE, related_name="local_characters")

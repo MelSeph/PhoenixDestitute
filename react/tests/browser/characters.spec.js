@@ -35,7 +35,7 @@ test('create two characters, load either, and retain the selection across refres
 test('delete requires the exact name, can be cancelled, and removes the selected character', async ({ page }) => {
   await page.goto('/'); await create(page, 'Ash');
   await page.getByRole('button', { name: 'Delete Ash', exact: true }).click();
-  await expect(page.getByRole('dialog')).toContainText('history is retained');
+  await expect(page.getByRole('dialog')).toContainText('This cannot be undone');
   await expect(page.getByRole('button', { name: 'Delete character', exact: true })).toBeDisabled();
   await page.getByRole('button', { name: 'Cancel', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Load Ash', exact: true })).toBeVisible();

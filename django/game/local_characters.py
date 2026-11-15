@@ -1,13 +1,16 @@
-"""Server-owned local character roster, activation, and logical deletion."""
+"""Server-owned local character roster, activation, and permanent deletion."""
 import uuid
 
 from django.contrib.sessions.backends.db import SessionStore
 from django.contrib.sessions.models import Session
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.db.models.deletion import ProtectedError
 from django.utils import timezone
 
-from .models import BirthRecord, BirthStatDraft, LocalCharacter, Player, Playthrough
+from .models import (BirthRecord, BirthStatDraft, Character, DeathSnapshot, DeathSnapshotEntry,
+                     EquippedPosition, InventoryItem, ItemThermalEnchantment, Legacy,
+                     LocalCharacter, Player, Playthrough, PlaythroughSave)
 
 
 def _session(key):
@@ -134,9 +137,6 @@ def delete_character(*, session_key, character_id, confirmation_name):
     entry = _entry(session, character_id, include_deleted=True)
     if not isinstance(confirmation_name, str) or confirmation_name != _name(entry):
         raise ValidationError("Type the character's name exactly to delete it.")
-    if entry.deleted_at is None:
-        entry.deleted_at = timezone.now()
-        entry.save(update_fields=["deleted_at"])
     source_ids = BirthRecord.objects.filter(playthrough__legacy_id=entry.player.legacy_id).values_list("source_draft_id", flat=True)
     BirthStatDraft.objects.filter(session=session, pk__in=source_ids).delete()
     if str(session.get_decoded().get("active_player_id")) == str(entry.player_id):
@@ -144,4 +144,26 @@ def delete_character(*, session_key, character_id, confirmation_name):
         if draft and BirthRecord.objects.filter(source_draft_id=draft.pk).exists():
             draft.delete()
         _activate(session, None, screen="creation")
+    life_ids = list(Playthrough.objects.select_for_update().filter(legacy_id=entry.player.legacy_id).values_list("pk", flat=True))
+    character_ids = list(Playthrough.objects.filter(pk__in=life_ids).values_list("character_id", flat=True))
+    legacy_id = entry.player.legacy_id
+    try:
+        DeathSnapshotEntry.objects.filter(snapshot__playthrough_id__in=life_ids).delete()
+        DeathSnapshot.objects.filter(playthrough_id__in=life_ids).delete()
+        EquippedPosition.objects.filter(playthrough_id__in=life_ids).delete()
+        ItemThermalEnchantment.objects.filter(item__playthrough_id__in=life_ids).delete()
+        InventoryItem.objects.filter(playthrough_id__in=life_ids).delete()
+        PlaythroughSave.objects.filter(playthrough_id__in=life_ids).delete()
+        BirthRecord.objects.filter(playthrough_id__in=life_ids).delete()
+        # Break only internal predecessor links; external references must protect
+        # the other story and roll back this entire operation.
+        Playthrough.objects.filter(pk__in=life_ids, previous_playthrough_id__in=life_ids).update(previous_playthrough=None)
+        Playthrough.objects.filter(pk__in=life_ids).delete()
+        entry.delete()
+        entry.player.delete()  # Cascades that Player's compatibility save/settings.
+        Character.objects.filter(pk__in=character_ids, kind=Character.Kind.PLAYABLE).delete()
+        if legacy_id is not None:
+            Legacy.objects.filter(pk=legacy_id).delete()
+    except ProtectedError as exc:
+        raise ValidationError("This story has protected references outside its ownership. Nothing was deleted.") from exc
     return _payload(session)

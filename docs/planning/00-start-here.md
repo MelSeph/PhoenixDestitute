@@ -4,6 +4,8 @@
 
 **Current local work:** Phase 2P identity/visuals/birth confirmation was pushed at `18d6c7f`. The user requested character loading/deletion; Phase 2Q adds a session-owned roster with Load/New character/Delete and typed-name confirmation, retaining protected history internally. See [27-character-management.md](27-character-management.md). Migration 0018 is applied after backup and preservation checks. All 296 Django tests, 6 settings tests, and 29 browser tests pass; production build succeeds. No commit/push yet. Training, age progression, dynamic Condition, and later-life progression remain incomplete.
 
+**Latest update:** Phase 2Q was pushed at `3e990e7`. The user subsequently requested a local database purge and then explicitly changed in-game Delete to permanent erasure of the selected story and history, superseding logical deletion. Implemented locally with ownership/name checks, ordered deletion, and atomic rollback; see [28-permanent-character-deletion.md](28-permanent-character-deletion.md). All 298 Django tests and 8 character-management browser tests pass; production build succeeds. No new migration, commit, or push for this update.
+
 The equipment-adaptation preference is now persisted through a session-scoped API, defaulting to player-controlled timing: [15-game-settings.md](15-game-settings.md). Migration 0010 is applied locally and the full suite has 113 passing tests. Automatic adaptation/scoring remains unimplemented; the preference alone does not change gear.
 
 ## Read next

@@ -116,17 +116,15 @@ class LocalCharacterTests(TestCase):
         self.assertNotIn("draft", loaded)
         self.assertFalse(BirthRecord.objects.exists())
 
-    def test_delete_active_hides_it_and_retains_history_and_frees_creation(self):
+    def test_delete_active_permanently_erases_history_and_frees_creation(self):
         entry, _ = self.create()
         record = BirthRecord.objects.get()
         GameSave.objects.create(player=entry.player, data={"preserved": True})
         result = self.delete(entry)
         self.assertEqual(result.status_code, 200)
         self.assertEqual(result.json()["characters"], [])
-        entry.refresh_from_db()
-        self.assertIsNotNone(entry.deleted_at)
-        self.assertEqual(BirthRecord.objects.get().pk, record.pk)
-        self.assertEqual(GameSave.objects.get().data, {"preserved": True})
+        for model in [LocalCharacter, BirthRecord, GameSave, Player, Character, Playthrough]:
+            self.assertFalse(model.objects.exists(), model.__name__)
         self.assertFalse(BirthStatDraft.objects.exists())
         self.assertNotIn("active_player_id", self.client.session)
         self.assertEqual(self.load(entry).status_code, 404)
@@ -136,9 +134,8 @@ class LocalCharacterTests(TestCase):
     def test_repeated_delete_is_idempotent_and_never_revives_the_entry(self):
         entry, _ = self.create()
         self.delete(entry)
-        deleted_at = LocalCharacter.objects.get().deleted_at
-        self.assertEqual(self.delete(entry).status_code, 200)
-        self.assertEqual(LocalCharacter.objects.get().deleted_at, deleted_at)
+        self.assertEqual(self.delete(entry).status_code, 404)
+        self.assertFalse(LocalCharacter.objects.exists())
         self.assertEqual(self.roster()["characters"], [])
         self.assertEqual(self.load(entry).status_code, 404)
 
@@ -230,6 +227,47 @@ class LocalCharacterTests(TestCase):
                     operation(session_key=self.client.session.session_key, **extra)
             self.assertEqual(self.client.session["active_player_id"], before)
             self.assertTrue(BirthStatDraft.objects.exists())
+
+    def test_permanent_delete_removes_all_lives_items_and_snapshots_but_preserves_other_stories(self):
+        from .models import (DeathSnapshot, DeathSnapshotEntry, EquippedPosition, EquipmentDefinition,
+                             InventoryItem, ItemThermalEnchantment, Legacy, PlayerGameSettings)
+        from .life_transitions import apply_life_outcome, LifeOutcome
+        entry, birth = self.create()
+        original = Playthrough.objects.get(legacy=entry.player.legacy)
+        definition = EquipmentDefinition.objects.create(key="shared-sword")
+        item = InventoryItem.objects.create(playthrough=original, definition_key=definition.key,
+            equipment_definition=definition, kind="equipment", location="equipped", properties={"durability": 10, "max_durability": 10})
+        EquippedPosition.objects.create(playthrough=original, item=item, position="main_hand")
+        ItemThermalEnchantment.objects.create(item=item, region="head", warmth=1, cooling=0)
+        snapshot = DeathSnapshot.objects.create(playthrough=original)
+        DeathSnapshotEntry.objects.create(snapshot=snapshot, item=item, slot=0, quantity=1, properties={})
+        PlaythroughSave.objects.create(playthrough=original, data={"history": True})
+        GameSave.objects.create(player=entry.player, data={"old": True})
+        PlayerGameSettings.objects.create(player=entry.player)
+        next_life = apply_life_outcome(player_id=entry.player_id, outcome=LifeOutcome.NEW_LIFE_SUCCESSOR, successor_name="Next")
+        snapshot.transferred_to = next_life
+        snapshot.save()
+        self.post("api-character-new", {})
+        other, other_birth = self.create("Other")
+        self.assertEqual(self.delete(entry, "Next").status_code, 200)
+        for model in [InventoryItem, EquippedPosition, ItemThermalEnchantment, DeathSnapshotEntry, DeathSnapshot,
+                      PlaythroughSave, GameSave, PlayerGameSettings]:
+            self.assertFalse(model.objects.exists(), model.__name__)
+        for model in [Player, Character, Legacy, BirthRecord, LocalCharacter, Playthrough]:
+            self.assertEqual(model.objects.count(), 1, model.__name__)
+        self.assertEqual(EquipmentDefinition.objects.get().pk, definition.pk)
+        self.assertEqual(self.load(other).json()["current"]["draft"]["birth"], other_birth["birth"])
+
+    def test_external_protected_history_rolls_back_the_entire_deletion(self):
+        entry, _ = self.create()
+        original = Playthrough.objects.get(legacy=entry.player.legacy)
+        self.post("api-character-new", {})
+        other, _ = self.create("Other")
+        Playthrough.objects.create(legacy=other.player.legacy, character=original.character,
+                                   transition_type="initial", status="historical")
+        before = {model.__name__: list(model.objects.values()) for model in [Player, Character, Playthrough, BirthRecord, LocalCharacter]}
+        self.assertEqual(self.delete(entry).status_code, 409)
+        self.assertEqual(before, {model.__name__: list(model.objects.values()) for model in [Player, Character, Playthrough, BirthRecord, LocalCharacter]})
 
     def test_csrf_accounts_methods_and_body_validation(self):
         protected = Client(enforce_csrf_checks=True)

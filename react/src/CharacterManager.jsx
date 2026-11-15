@@ -56,7 +56,7 @@ export default function CharacterManager() {
       }));
       setViewKey(key => key + 1); setChildState({ busy: false, dirty: false });
       setDeleting(null); setConfirmationName(''); setReady(true);
-      setMessage(action === 'delete' ? 'Character deleted from your playable list.' : action === 'new' ? 'Your saved characters are kept. Continue your unfinished draft or roll a new one.' : `${entry.name} loaded.`);
+      setMessage(action === 'delete' ? 'Character and saved story permanently deleted.' : action === 'new' ? 'Your saved characters are kept. Continue your unfinished draft or roll a new one.' : `${entry.name} loaded.`);
     } catch (error) {
       setDeleting(null);
       setMessage(`Could not complete character action: ${error.message}. Reload characters before trying again.`);
@@ -84,7 +84,7 @@ export default function CharacterManager() {
       : <BirthCreationPanel key={`${current?.id ?? 'creation'}-${viewKey}`} readUrl={current ? '/api/characters/current/' : undefined}
           disabled={busy || !ready} onConfirmed={reload} onStateChange={reportState} />)}
     {deleting && <Dialog title={`Delete ${deleting.name}?`} onClose={() => { if (!busy) setDeleting(null); }}>
-      <p>This character will be removed from your playable list and cannot be loaded again. Its history is retained internally. There is no restore action.</p>
+      <p>Permanently destroy this character and its entire saved story, including all lives, saves, items, birth records, and history? This cannot be undone. Other characters will be kept.</p>
       <label htmlFor="delete-character-name">Type {deleting.name} to delete</label><input id="delete-character-name" value={confirmationName} onChange={event => setConfirmationName(event.target.value)} autoComplete="off" />
       <div className="actions"><button className="secondary" disabled={busy} onClick={() => setDeleting(null)}>Cancel</button>
         <button disabled={locked || confirmationName !== deleting.name} onClick={() => act('delete', deleting)}>Delete character</button></div>

@@ -1,5 +1,7 @@
 # Planning validation — honest status
 
+Latest permanent-deletion verification (2026-11-15): all 298 Django tests pass, none skipped; all 8 character-management browser tests pass; production build succeeds. Tests verify full story/history deletion and preservation of unrelated data, including atomic rollback on external protected references. No new migration. See [28-permanent-character-deletion.md](28-permanent-character-deletion.md).
+
 | Check | Status | Evidence or missing work |
 |---|---|---|
 | Approved handbook structure | **Passed** | 12 requested numbered `.md` documents created. |
