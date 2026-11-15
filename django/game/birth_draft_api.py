@@ -6,7 +6,7 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods, require_POST
 
 from .birth_drafts import (create_birth_stat_draft, read_birth_stat_draft,
-                           reroll_birth_stat_draft, set_birth_stat_locks)
+                           reroll_birth_stat_draft, set_birth_stat_locks, set_birth_identity, confirm_birth)
 from .models import BirthStatDraft
 
 
@@ -88,3 +88,39 @@ def birth_stat_reroll(request):
     except ValidationError as exc:
         return JsonResponse({"error": " ".join(exc.messages)}, status=409)
     return JsonResponse({"success": True, "draft": draft})
+
+
+@require_POST
+def birth_identity(request):
+    error = _account_error(request)
+    if error is not None:
+        return error
+    data, error = _body(request, {"revision", "identity"})
+    if error is not None:
+        return error
+    try:
+        draft = set_birth_identity(session_key=request.session.session_key, **data)
+    except BirthStatDraft.DoesNotExist:
+        return _missing()
+    except ValidationError as exc:
+        return JsonResponse({"error": " ".join(exc.messages)}, status=409)
+    return JsonResponse({"success": True, "draft": draft})
+
+
+@require_POST
+def birth_confirm(request):
+    error = _account_error(request)
+    if error is not None:
+        return error
+    data, error = _body(request, {"revision"})
+    if error is not None:
+        return error
+    try:
+        draft, created = confirm_birth(session_key=request.session.session_key, **data)
+    except BirthStatDraft.DoesNotExist:
+        return _missing()
+    except ValidationError as exc:
+        return JsonResponse({"error": " ".join(exc.messages)}, status=409)
+    # Keep this request's session cache consistent with the transactional write.
+    request.session["active_player_id"] = draft["birth"]["player_id"]
+    return JsonResponse({"success": True, "draft": draft}, status=201 if created else 200)

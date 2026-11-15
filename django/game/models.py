@@ -122,6 +122,7 @@ class BirthStatDraft(models.Model):
     endurance = models.PositiveSmallIntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
     baseline_condition = models.PositiveSmallIntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
     locked_stats = models.JSONField(default=list, blank=True)
+    identity = models.JSONField(default=dict, blank=True)
 
     class Meta:
         constraints = [models.CheckConstraint(
@@ -138,6 +139,8 @@ class BirthStatDraft(models.Model):
             raise ValidationError({"locked_stats": "Choose at most three valid base stat names."})
         if len(set(locks)) != len(locks):
             raise ValidationError({"locked_stats": "Stat locks must not contain duplicates."})
+        from .birth_identity import validate_birth_identity
+        validate_birth_identity(self.identity)
 
 
 class Playthrough(models.Model):
@@ -215,6 +218,31 @@ class Playthrough(models.Model):
 
     def __str__(self):
         return f"Playthrough {self.pk} ({self.transition_type})"
+
+
+class BirthRecord(models.Model):
+    """Permanent, immutable-by-service snapshot of one confirmed initial birth."""
+
+    playthrough = models.OneToOneField(Playthrough, on_delete=models.PROTECT, related_name="birth_record")
+    source_draft_id = models.UUIDField(unique=True)
+    source_revision = models.UUIDField()
+    identity = models.JSONField()
+    stats = models.JSONField()
+    resources = models.JSONField()
+    confirmed_at = models.DateTimeField(auto_now_add=True)
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        from .birth_identity import birth_resources, validate_birth_identity
+        super().clean()
+        validate_birth_identity(self.identity, complete=True)
+        if (not isinstance(self.stats, dict) or set(self.stats) != set(BIRTH_STAT_FIELDS)
+                or any(type(value) is not int or not 1 <= value <= 5 for value in self.stats.values())):
+            raise ValidationError("A birth record requires all eight birth attributes from 1 to 5.")
+        if self.resources != birth_resources(self.stats):
+            raise ValidationError("Birth resources must start full at their parent attributes times ten.")
+        if self.playthrough_id and self.playthrough.transition_type != Playthrough.Transition.INITIAL:
+            raise ValidationError("Birth confirmation creates an initial life only.")
 
 
 class EquipmentPosition(models.TextChoices):

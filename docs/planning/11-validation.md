@@ -165,3 +165,11 @@ The authorized React port adds no Django/backend changes. All 254 existing Djang
 ## Birth-first React UI — 2026-11-15
 
 All 254 Django tests pass, none skipped. The updated UI passes 6 settings tests and 14 Edge browser tests, including real birth-draft/session/CSRF persistence, unchanged existing characters, locks/switching/rerolls, stale and lost-response recovery, and mobile layout at 200% text. Production build succeeds. Test integration uses only a temporary database; no Django code/migrations, working-database writes, or legacy edits. Details: [25-birth-first-react-ui.md](25-birth-first-react-ui.md). No commit or push performed.
+
+## Phase 2P — identity, visuals, and final confirmation — 2026-11-15
+
+- All **275 Django tests pass, none skipped** (254 existing + 21 new birth-identity/confirmation tests).
+- All **21 Edge browser tests** and **6 settings tests** pass; React production build succeeds. Browser integration uses a temporary migrated database, including real confirmation/CSRF/session behavior, retries, failures, and old-character preservation. Desktop choices and mobile review visually inspected.
+- `python manage.py check`: no issues. `makemigrations --check --dry-run`: no changes detected.
+- Created `django/db.phase2p-birth-backup.sqlite3` and verified its integrity; applied migration 0017 successfully. Compared all pre-existing game-table values before/after: preserved, including user draft rolls and locks. The new birth table remains empty in the working database.
+- Details: [26-birth-identity-confirmation.md](26-birth-identity-confirmation.md). Training/aging/current Condition remain future work. No legacy/prototype edits, commit, or push.

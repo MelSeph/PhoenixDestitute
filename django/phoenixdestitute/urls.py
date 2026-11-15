@@ -22,4 +22,6 @@ urlpatterns = [
     path("api/creation/stats/", birth_draft_api.birth_stats, name="api-birth-stats"),
     path("api/creation/stats/locks/", birth_draft_api.birth_stat_locks, name="api-birth-stat-locks"),
     path("api/creation/stats/reroll/", birth_draft_api.birth_stat_reroll, name="api-birth-stat-reroll"),
+    path("api/creation/stats/identity/", birth_draft_api.birth_identity, name="api-birth-identity"),
+    path("api/creation/stats/confirm/", birth_draft_api.birth_confirm, name="api-birth-confirm"),
 ]

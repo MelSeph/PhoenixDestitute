@@ -62,3 +62,7 @@ This is a design change, not authorization to wipe existing characters/saves or 
 5. Define variable training-session cost formulas using activity, intensity, and associated stats, plus exhaustion gating and rest/recovery. All physical, mental, and other training draws on Stamina from infancy through adulthood; individual activities and age progression remain open.
 
 Phase 2O now implements the stat-selection draft portion of this design; see [23-birth-stat-drafts.md](23-birth-stat-drafts.md). It creates no born characters and does not implement identity/gender/looks, final birth confirmation, current Condition, or training. No frontend files or existing actor/save data were changed.
+
+## Phase 2P implementation update
+
+The later approved [identity/confirmation milestone](26-birth-identity-confirmation.md) now implements player-entered names, Male/Female/Nonbinary/Custom gender, the reviewed skin/eye/hair presets, visual choice cards, and final birth confirmation. Hair length and texture are separate cosmetic choices; every color and length has a matching visual. The initial birth snapshot is stored permanently, starts with full derived resource values, and freezes creation edits/rerolls. This supersedes the earlier identity/confirmation deferrals above. No gender/appearance stat bonuses, pronouns, attraction fields, training/aging, or dynamic Condition rules are inferred. Existing characters/saves are not converted or replaced.

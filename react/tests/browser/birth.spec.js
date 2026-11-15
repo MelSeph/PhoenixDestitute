@@ -38,7 +38,7 @@ test('start is explicit, bootstraps CSRF, and displays only server stats/resourc
   await expect(page.getByLabel('Stamina preview', { exact: true })).toHaveText('30 / 30');
   expect(writes).toEqual([{}]);
   expect(legacy).toEqual([]);
-  await expect(page.getByText(/final birth confirmation are not available yet/)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Review birth', exact: true })).toBeDisabled();
   await page.locator('.birth-creation').screenshot({ path: testInfo.outputPath('birth-desktop.png') });
 });
 
