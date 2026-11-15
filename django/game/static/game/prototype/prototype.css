@@ -1,0 +1,543 @@
+
+/* ========================================
+   PhoenixDestitute - Responsive Prototype
+   ======================================== */
+
+/* Design colors and reusable values */
+:root {
+    --color-background: #111820;
+    --color-panel: #202d3a;
+    --color-border: #455364;
+    --color-text: #e0e7ee;
+    --color-muted: #a7b7c7;
+    --color-accent: #e5c78e;
+    --color-button: #b5c8db;
+    --color-button-text: #000000;
+    --body-line-height: 1.6;
+    --body-letter-spacing: 0em;
+    --body-word-spacing: 0em;
+    --paragraph-spacing: 1em;
+    --body-font-family: Arial, Helvetica, sans-serif;
+    --reading-width: 65ch;
+
+    --spacing-small: 8px;
+    --spacing-medium: 16px;
+    --spacing-large: 24px;
+
+    --border-radius: 8px;
+}
+/* Make element sizing predictable */
+* {
+    box-sizing: border-box;
+}
+/* Main page */
+body {
+    margin: 0;
+    min-height: 100vh;
+    background-color: var(--color-background);
+    color: var(--color-text);
+    font-family: var(--body-font-family);
+    font-size: 1rem;
+    line-height: var(--body-line-height);
+    letter-spacing: var(--body-letter-spacing);
+    word-spacing: var(--body-word-spacing);
+}
+/* Page content container */
+.prototype-container {
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: var(--spacing-large);
+}
+/* Headings */
+h1, h2, h3 {
+    color: var(--color-accent);
+    line-height: 1.3;
+}
+/* Reusable panel */
+.panel {
+    background-color: var(--color-panel);
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-medium);
+}
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .prototype-container {
+        padding: var(--spacing-medium);
+    }
+}
+/* Appearance settings */
+.appearance-settings {
+    margin-top: var(--spacing-medium);
+}
+.appearance-settings label {
+    display: block;
+    margin-bottom: var(--spacing-small);
+    font-weight: bold;
+}
+.appearance-settings select {
+    display: block;
+    width: 100%;
+    max-width: 320px;
+    min-height: 48px;
+    padding: 10px 12px;
+    background-color: var(--color-panel);
+    color: var(--color-text);
+    border: 2px solid var(--color-border);
+    border-radius: var(--border-radius);
+    font: inherit;
+    cursor: pointer;
+}
+/* Visible keyboard focus indicator */
+.appearance-settings select:focus-visible {
+    outline: 3px solid var(--color-accent);
+    outline-offset: 3px;
+}
+/* Custom appearance controls */
+#custom-color-settings {
+    margin-top: var(--spacing-large);
+}
+#custom-color-settings[hidden] {
+    display: none;
+}
+#custom-color-message {
+    min-height: 1.5em;
+    color: var(--color-text);
+}
+#custom-color-settings label {
+    display: block;
+    margin-top: var(--spacing-medium);
+    margin-bottom: var(--spacing-small);
+    font-weight: bold;
+}
+
+/* Reusable custom picker — first connected to Accent Color */
+.custom-picker-trigger, .picker-actions button {
+    min-height: 48px; padding: 8px 14px; border: 2px solid var(--color-border);
+    border-radius: var(--border-radius); background: var(--color-panel);
+    color: var(--color-text); font: inherit; cursor: pointer;
+}
+.custom-picker-trigger { display: flex; align-items: center; gap: 12px; }
+.custom-picker-swatch { width: 44px; height: 30px; border: 1px solid var(--color-text); border-radius: 4px; background: var(--color-accent); }
+.custom-color-dialog { width: min(440px, calc(100vw - 24px)); max-height: 90vh; overflow: auto;
+    padding: 0; border: 2px solid var(--color-border); border-radius: 12px;
+    background: var(--color-panel); color: var(--color-text); }
+.custom-color-dialog::backdrop { background: rgba(0,0,0,.75); }
+.picker-content { display: grid; gap: 10px; padding: 20px; }
+.picker-content h2 { margin: 0 0 4px; }
+.picker-preview { height: 76px; border: 2px solid var(--color-border); border-radius: 8px; }
+.picker-content input[type="range"] { width: 100%; min-height: 32px; accent-color: var(--color-accent); }
+.picker-content input[type="text"] { min-height: 44px; padding: 8px; font: inherit;
+    background: var(--color-background); color: var(--color-text);
+    border: 2px solid var(--color-border); border-radius: 6px; }
+.picker-presets { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.picker-presets button { width: 42px; height: 42px; border: 2px solid var(--color-text);
+    border-radius: 6px; cursor: pointer; }
+.picker-actions { display: flex; justify-content: flex-end; gap: 10px; }
+.custom-color-dialog :focus-visible, .custom-picker-trigger:focus-visible {
+    outline: 3px solid var(--color-accent); outline-offset: 3px;
+}
+#picker-status { min-height: 1.5em; margin: 0; }
+
+/* Six shared custom color triggers */
+.color-picker-setting { margin-top: var(--spacing-medium); }
+.color-picker-label { display: block; font-weight: bold; margin-bottom: var(--spacing-small); }
+.color-picker-setting .custom-picker-trigger { margin-top: 0; }
+
+/* Player-customizable gameplay button preview. */
+.game-button-preview {
+    display: inline-block;
+    min-height: 48px;
+    padding: 10px 18px;
+    border: 2px solid var(--color-button);
+    border-radius: var(--border-radius);
+    background: var(--color-button);
+    color: var(--color-button-text);
+    font: inherit;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: var(--spacing-medium);
+}
+.game-button-preview:focus-visible {
+    outline: 3px solid var(--color-accent);
+    outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+    .game-button-preview { transition: none; }
+}
+
+/* Part 27: keyboard, touch, and reduced-motion accessibility. */
+.picker-instructions { margin: 0; color: var(--color-muted); }
+.picker-content input[type="range"] { min-height: 44px; cursor: pointer; }
+.picker-presets button { min-width: 44px; min-height: 44px; }
+.picker-actions button { min-width: 90px; }
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* Part 28: Text scales from the root preference, including headings and controls. */
+.font-size-setting { margin-top: var(--spacing-large); }
+.font-size-setting p { margin: var(--spacing-small) 0; }
+.font-size-setting select { max-width: 100%; }
+.prototype-container, .panel { min-width: 0; }
+.picker-content { overflow-wrap: anywhere; }
+@media (max-width: 480px) {
+    .prototype-container { padding: var(--spacing-small); }
+    .panel { padding: var(--spacing-small); }
+}
+
+/* Part 29: Readability preference independent of font size and theme. */
+.line-spacing-setting { margin-top: var(--spacing-large); }
+.line-spacing-setting p { margin: var(--spacing-small) 0; }
+.line-spacing-setting select { max-width: 100%; }
+.readability-preview { max-width: 65ch; padding: var(--spacing-medium); border: 1px solid var(--color-border); border-radius: var(--border-radius); overflow-wrap: anywhere; }
+
+/* Part 30: Letter spacing preference, independent of other appearance settings. */
+.letter-spacing-setting { margin-top: var(--spacing-large); }
+.letter-spacing-setting p { margin: var(--spacing-small) 0; }
+.letter-spacing-setting select { max-width: 100%; }
+.letter-spacing-preview { max-width: 65ch; padding: var(--spacing-medium); border: 1px solid var(--color-border); border-radius: var(--border-radius); overflow-wrap: anywhere; }
+
+/* Part 31: Independent word-spacing preference. */
+.word-spacing-setting { margin-top: var(--spacing-large); }
+.word-spacing-setting p { margin: var(--spacing-small) 0; }
+.word-spacing-setting select { max-width: 100%; }
+.word-spacing-preview { max-width: 65ch; padding: var(--spacing-medium); border: 1px solid var(--color-border); border-radius: var(--border-radius); overflow-wrap: anywhere; }
+
+/* Part 32: Narrative paragraph spacing; do not alter settings help/status margins. */
+.paragraph-spacing-setting { margin-top: var(--spacing-large); }
+.paragraph-spacing-setting select { max-width: 100%; }
+.paragraph-spacing-preview { max-width: 65ch; padding: var(--spacing-medium); border: 1px solid var(--color-border); border-radius: var(--border-radius); overflow-wrap: anywhere; }
+.game-prose p { margin: 0; }
+.game-prose p + p { margin-block-start: var(--paragraph-spacing); }
+
+/* Part 33: Independent font-family preference. */
+.font-family-setting { margin-top: var(--spacing-large); }
+.font-family-setting select { max-width: 100%; }
+.font-family-preview { max-width: 65ch; padding: var(--spacing-medium); border: 1px solid var(--color-border); border-radius: var(--border-radius); overflow-wrap: anywhere; }
+
+/* Part 34: Adjustable narrative line length, with responsive maximum width. */
+.reading-width-setting { margin-top: var(--spacing-large); }
+.reading-width-setting select { max-width: 100%; }
+.reading-width-preview {
+    width: 100%;
+    max-width: var(--reading-width);
+    padding: var(--spacing-medium);
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius);
+    overflow-wrap: anywhere;
+}
+
+/* Part 35: Readability-only reset control. */
+.readability-reset-setting { margin-top: var(--spacing-large); padding-block: var(--spacing-medium); border-top: 1px solid var(--color-border); }
+.readability-reset-setting button {
+    min-height: 44px;
+    padding: 0.65em 1em;
+    border: 2px solid var(--color-button);
+    border-radius: var(--border-radius);
+    background: var(--color-button);
+    color: var(--color-button-text);
+    font: inherit;
+    font-weight: bold;
+    cursor: pointer;
+}
+.readability-reset-setting button:focus-visible { outline: 3px solid var(--color-accent); outline-offset: 3px; }
+
+
+/* Part 36: Color-only reset, matching the player-selected button palette. */
+.color-reset-setting {
+    margin-top: var(--spacing-large);
+    padding-block: var(--spacing-medium);
+    border-top: 1px solid var(--color-border);
+}
+.color-reset-setting button {
+    min-height: 44px;
+    padding: 0.65em 1em;
+    border: 2px solid var(--color-button);
+    border-radius: var(--border-radius);
+    background: var(--color-button);
+    color: var(--color-button-text);
+    font: inherit;
+    font-weight: bold;
+    cursor: pointer;
+}
+.color-reset-setting button:focus-visible {
+    outline: 3px solid var(--color-accent);
+    outline-offset: 3px;
+}
+
+/* Part 37: Export control follows the selected button palette. */
+.appearance-export-setting {
+    margin-top: var(--spacing-large);
+    padding-block: var(--spacing-medium);
+    border-top: 1px solid var(--color-border);
+}
+.appearance-export-setting button {
+    min-height: 44px;
+    padding: 0.65em 1em;
+    border: 2px solid var(--color-button);
+    border-radius: var(--border-radius);
+    background: var(--color-button);
+    color: var(--color-button-text);
+    font: inherit;
+    font-weight: bold;
+    cursor: pointer;
+}
+.appearance-export-setting button:focus-visible {
+    outline: 3px solid var(--color-accent);
+    outline-offset: 3px;
+}
+
+/* Part 38: Import backup action matches the player's selected button palette. */
+.appearance-import-setting {
+    margin-top: var(--spacing-large);
+    padding-block: var(--spacing-medium);
+    border-top: 1px solid var(--color-border);
+}
+.appearance-import-setting input[type="file"] {
+    display: block;
+    max-width: 100%;
+    margin-block: 0.5em 1em;
+    color: var(--color-text);
+    font: inherit;
+}
+.appearance-import-setting button {
+    min-height: 44px;
+    padding: 0.65em 1em;
+    border: 2px solid var(--color-button);
+    border-radius: var(--border-radius);
+    background: var(--color-button);
+    color: var(--color-button-text);
+    font: inherit;
+    font-weight: bold;
+    cursor: pointer;
+}
+.appearance-import-setting button:focus-visible,
+.appearance-import-setting input[type="file"]:focus-visible {
+    outline: 3px solid var(--color-accent);
+    outline-offset: 3px;
+}
+
+/* Part 39: Accessible, scrollable import review at large text and zoom levels. */
+.appearance-import-preview-dialog {
+    box-sizing: border-box;
+    width: min(94vw, 42rem);
+    max-height: min(85vh, 52rem);
+    overflow: auto;
+    padding: clamp(1rem, 3vw, 1.5rem);
+    border: 2px solid var(--color-border);
+    border-radius: var(--border-radius);
+    background: var(--color-panel);
+    color: var(--color-text);
+    font: inherit;
+    line-height: var(--line-height, 1.6);
+}
+.appearance-import-preview-dialog::backdrop { background: rgb(0 0 0 / 0.72); }
+.appearance-import-preview-dialog h2 { margin-top: 0; }
+.appearance-import-preview-dialog h3 { margin-bottom: 0.5em; }
+.appearance-import-preview-list {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+    gap: 0.5em 1em;
+    margin: 0 0 1.25em;
+    overflow-wrap: anywhere;
+}
+.appearance-import-preview-list dt { font-weight: bold; }
+.appearance-import-preview-list dd { margin: 0; display: flex; align-items: center; gap: 0.5em; flex-wrap: wrap; }
+.appearance-import-preview-swatch {
+    display: inline-block;
+    width: 1.6em;
+    height: 1.6em;
+    flex: 0 0 1.6em;
+    border: 1px solid var(--color-border);
+    border-radius: 0.25em;
+}
+.appearance-import-preview-actions { display: flex; flex-wrap: wrap; gap: 0.75em; justify-content: flex-end; }
+.appearance-import-preview-actions button {
+    min-height: 44px;
+    padding: 0.65em 1em;
+    border: 2px solid var(--color-button);
+    border-radius: var(--border-radius);
+    background: var(--color-button);
+    color: var(--color-button-text);
+    font: inherit;
+    font-weight: bold;
+    cursor: pointer;
+}
+.appearance-import-preview-actions button:focus-visible { outline: 3px solid var(--color-accent); outline-offset: 3px; }
+@media (max-width: 420px) { .appearance-import-preview-list { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { .appearance-import-preview-dialog { scroll-behavior: auto; } }
+
+
+/* Preserve Part 38: native Browse button follows the selected button colors. */
+.appearance-import-setting input[type="file"]::file-selector-button {
+    min-height: 44px;
+    padding: 0.65em 1em;
+    margin-right: 0.75em;
+    border: 2px solid var(--color-button);
+    border-radius: var(--border-radius);
+    background: var(--color-button);
+    color: var(--color-button-text);
+    font: inherit;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+/* Part 40: Changes are identified by text as well as visual emphasis. */
+.appearance-import-change-summary {
+    padding: 0.75em;
+    border: 2px solid var(--color-border);
+    border-radius: var(--border-radius);
+    font-weight: bold;
+}
+.appearance-import-changed { text-decoration: underline; text-underline-offset: 0.2em; }
+.appearance-import-change-note {
+    display: block;
+    flex-basis: 100%;
+    font-size: 0.9em;
+    color: var(--color-muted);
+    overflow-wrap: anywhere;
+}
+
+/* Part 41: Undo shares the same button palette; disabled state is distinguishable. */
+.appearance-import-setting button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    border-style: dashed;
+}
+
+
+/* Part 42: Keep the copy action consistent with the export and reset controls. */
+.appearance-export-setting #copy-appearance-summary-button { margin-top: 0.4rem; }
+
+/* Part 43: Download summary shares existing export button styling. */
+.appearance-export-setting #download-appearance-summary-button { margin-top: 0.4rem; }
+
+/* Part 44: Full appearance reset. Keep every enabled action on the chosen button palette. */
+.appearance-reset-all-setting {
+    margin-top: var(--spacing-large);
+    padding-block: var(--spacing-medium);
+    border-top: 1px solid var(--color-border);
+}
+.appearance-reset-all-setting button {
+    min-height: 44px;
+    padding: 0.65em 1em;
+    border: 2px solid var(--color-button);
+    border-radius: var(--border-radius);
+    background: var(--color-button);
+    color: var(--color-button-text);
+    font: inherit;
+    font-weight: bold;
+    cursor: pointer;
+}
+.appearance-reset-all-setting button:focus-visible {
+    outline: 3px solid var(--color-accent);
+    outline-offset: 3px;
+}
+
+/* Part 45: Live summary uses the existing palette and remains readable on narrow screens. */
+.appearance-live-summary { margin-top: var(--spacing-large); border-top: 1px solid var(--color-border); padding-top: var(--spacing-medium); }
+.appearance-live-summary pre { white-space: pre-wrap; overflow-wrap: anywhere; max-width: 100%; padding: 1rem; border: 2px solid var(--color-border); border-radius: var(--border-radius); background: var(--color-panel); color: var(--color-text); font: inherit; }
+/* Preserve the verified disabled Undo visual treatment from Part 42. */
+.appearance-import-setting #undo-appearance-import-button:disabled { opacity: 1; background: var(--color-panel); color: var(--color-muted); border: 2px dashed var(--color-muted); cursor: not-allowed; box-shadow: none; text-decoration: none; }
+.appearance-import-setting #undo-appearance-import-button:disabled:hover,
+.appearance-import-setting #undo-appearance-import-button:disabled:active { background: var(--color-panel); color: var(--color-muted); border-color: var(--color-muted); }
+
+/* Part 46: Accessible, keyboard-operable collapse/expand control. */
+.appearance-live-summary summary { cursor: pointer; font-weight: bold; font-size: 1.1em; padding: .5rem 0; color: var(--color-text); }
+.appearance-live-summary summary:focus-visible { outline: 3px solid var(--color-accent); outline-offset: 3px; border-radius: var(--border-radius); }
+.appearance-summary-toggle-hint { font-size: .8em; font-weight: normal; color: var(--color-muted); }
+.appearance-live-summary details:not([open]) { padding-bottom: .25rem; }
+
+/* Part 46 hotfix: Undo's appearance must track the disabled property even
+   after it has been enabled once. Scope overrides to this button only. */
+.appearance-import-setting #undo-appearance-import-button:enabled {
+    opacity: 1;
+    background: var(--color-button);
+    color: var(--color-button-text);
+    border: 2px solid var(--color-button);
+    border-style: solid;
+    cursor: pointer;
+}
+.appearance-import-setting #undo-appearance-import-button:disabled,
+.appearance-import-setting #undo-appearance-import-button:disabled:hover,
+.appearance-import-setting #undo-appearance-import-button:disabled:active,
+.appearance-import-setting #undo-appearance-import-button:disabled:focus {
+    opacity: 1;
+    background: var(--color-panel);
+    color: var(--color-muted);
+    border: 2px dashed var(--color-muted);
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+/* Part 48: Reset summary display follows the same themed button palette. */
+.appearance-live-summary #reset-summary-display-button {
+    min-height: 44px;
+    padding: .65em 1em;
+    margin-top: .75rem;
+    border: 2px solid var(--color-button);
+    border-radius: var(--border-radius);
+    background: var(--color-button);
+    color: var(--color-button-text);
+    font: inherit;
+    font-weight: bold;
+    cursor: pointer;
+}
+.appearance-live-summary #reset-summary-display-button:focus-visible {
+    outline: 3px solid var(--color-accent);
+    outline-offset: 3px;
+}
+
+/* Part 49: Visible whether the details panel is expanded or collapsed. */
+.appearance-summary-display-status {
+    margin: .75rem 0 .25rem;
+    color: var(--color-muted);
+    font: inherit;
+    font-weight: bold;
+}
+
+/* Part 50: Read-only preference customization count. */
+.appearance-customization-status {
+    margin: .75rem 0 .25rem;
+    color: var(--color-muted);
+    font: inherit;
+    font-weight: bold;
+}
+
+/* Part 51: Native, keyboard-accessible Options disclosure. Closed by default. */
+.options-menu { margin-top: var(--spacing-medium); }
+.options-toggle {
+    display: inline-flex; align-items: center; gap: .55em;
+    padding: .65em 1em; min-height: 44px;
+    border: 2px solid var(--color-button); border-radius: var(--border-radius);
+    background: var(--color-button); color: var(--color-button-text);
+    font: inherit; font-weight: bold; cursor: pointer;
+    list-style: none;
+}
+.options-toggle::-webkit-details-marker { display: none; }
+.options-toggle::marker { content: ""; }
+.options-toggle:focus-visible { outline: 3px solid var(--color-accent); outline-offset: 3px; }
+.options-toggle:hover { filter: brightness(1.07); }
+.options-cog { width: 1.25em; height: 1.25em; flex: none; }
+.options-menu[open] > .options-toggle { margin-bottom: var(--spacing-medium); }
+
+/* Phase 1A: local character control uses the existing custom button palette. */
+#player-create-button {
+    min-height: 44px;
+    padding: .65em 1em;
+    border: 2px solid var(--color-button);
+    border-radius: var(--border-radius);
+    background: var(--color-button);
+    color: var(--color-button-text);
+    font: inherit;
+    font-weight: bold;
+    cursor: pointer;
+}
+#player-create-button:disabled { opacity: .6; cursor: wait; }

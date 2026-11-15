@@ -1,0 +1,131 @@
+
+/* ========================================
+   PhoenixDestitute - Responsive Prototype
+   ======================================== */
+
+/* Design colors and reusable values */
+:root {
+    --color-background: #111820;
+    --color-panel: #202d3a;
+    --color-border: #455364;
+    --color-text: #e0e7ee;
+    --color-muted: #a7b7c7;
+    --color-accent: #e5c78e;
+    --color-button: #35485c;
+
+    --spacing-small: 8px;
+    --spacing-medium: 16px;
+    --spacing-large: 24px;
+
+    --border-radius: 8px;
+}
+/* Make element sizing predictable */
+* {
+    box-sizing: border-box;
+}
+/* Main page */
+body {
+    margin: 0;
+    min-height: 100vh;
+    background-color: var(--color-background);
+    color: var(--color-text);
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+}
+/* Page content container */
+.prototype-container {
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: var(--spacing-large);
+}
+/* Headings */
+h1, h2, h3 {
+    color: var(--color-accent);
+    line-height: 1.3;
+}
+/* Reusable panel */
+.panel {
+    background-color: var(--color-panel);
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-medium);
+}
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .prototype-container {
+        padding: var(--spacing-medium);
+    }
+    body {
+        font-size: 16px;
+    }
+}
+/* Appearance settings */
+.appearance-settings {
+    margin-top: var(--spacing-medium);
+}
+.appearance-settings label {
+    display: block;
+    margin-bottom: var(--spacing-small);
+    font-weight: bold;
+}
+.appearance-settings select {
+    display: block;
+    width: 100%;
+    max-width: 320px;
+    min-height: 48px;
+    padding: 10px 12px;
+    background-color: var(--color-panel);
+    color: var(--color-text);
+    border: 2px solid var(--color-border);
+    border-radius: var(--border-radius);
+    font: inherit;
+    cursor: pointer;
+}
+/* Visible keyboard focus indicator */
+.appearance-settings select:focus-visible {
+    outline: 3px solid var(--color-accent);
+    outline-offset: 3px;
+}
+/* Custom appearance controls */
+#custom-color-settings {
+    margin-top: var(--spacing-large);
+}
+#custom-color-settings[hidden] {
+    display: none;
+}
+#custom-panel-color,
+#custom-text-color,
+#custom-muted-color,
+#custom-accent-color,
+#custom-border-color,
+#custom-background-color {
+    display: block;
+    width: 80px;
+    height: 48px;
+    margin-top: var(--spacing-small);
+    border: 2px solid var(--color-border);
+    border-radius: var(--border-radius);
+    background-color: var(--color-panel);
+    cursor: pointer;
+}
+#custom-panel-color:focus-visible,
+#custom-text-color:focus-visible,
+#custom-muted-color:focus-visible,
+#custom-accent-color:focus-visible,
+#custom-border-color:focus-visible,
+#custom-background-color:focus-visible {
+    outline: 3px solid var(--color-accent);
+    outline-offset: 3px;
+}
+#custom-color-message {
+    min-height: 1.5em;
+    color: var(--color-text);
+}
+#custom-color-settings label {
+    display: block;
+    margin-top: var(--spacing-medium);
+    margin-bottom: var(--spacing-small);
+    font-weight: bold;
+}

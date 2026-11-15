@@ -1,0 +1,295 @@
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PhoenixDestitute - Frontend Prototype</title>
+    <link rel="stylesheet" href="{% static 'game/prototype/prototype.css' %}">
+</head>
+<body>
+    <main class="prototype-container">
+        <section class="panel">
+            <h1>PhoenixDestitute</h1>
+            <p>Responsive frontend prototype is working!</p>
+        </section>
+        <section class="panel" aria-labelledby="player-panel-heading" id="player-panel">
+            <h2 id="player-panel-heading">Character</h2>
+            <p id="player-api-status" role="status" aria-live="polite">Loading character…</p>
+            <p id="player-api-details" hidden></p>
+            <button type="button" id="player-create-button" hidden>Create local character</button>
+        </section>
+        <details class="options-menu" id="game-options-menu">
+            <summary class="options-toggle" aria-label="Options — open or close appearance settings">
+                <svg class="options-cog" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                    <path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z"/>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06-1.9 1.9-.06-.06A1.65 1.65 0 0 0 16 18.4a1.65 1.65 0 0 0-1 .6 1.65 1.65 0 0 0-.4 1.08V21h-2.7v-.92A1.65 1.65 0 0 0 10.5 18.4a1.65 1.65 0 0 0-1.82.33l-.06.06-1.9-1.9.06-.06A1.65 1.65 0 0 0 7.1 15a1.65 1.65 0 0 0-1.6-1.25H4.6v-2.7h.9A1.65 1.65 0 0 0 7.1 9.5a1.65 1.65 0 0 0-.33-1.82l-.06-.06 1.9-1.9.06.06A1.65 1.65 0 0 0 10.5 6.1a1.65 1.65 0 0 0 1.4-1.68V3.5h2.7v.92A1.65 1.65 0 0 0 16 6.1a1.65 1.65 0 0 0 1.82-.33l.06-.06 1.9 1.9-.06.06A1.65 1.65 0 0 0 19.4 9.5a1.65 1.65 0 0 0 1.6 1.55h.9v2.7H21A1.65 1.65 0 0 0 19.4 15Z"/>
+                </svg>
+                <span>Options</span>
+            </summary>
+        <section class="panel appearance-settings" aria-labelledby="appearance-heading">
+            <h2 id="appearance-heading">Appearance Settings</h2>
+            <label for="theme-selector">Color Theme</label>
+            <select id="theme-selector" name="theme">
+                <option value="midnight">Midnight</option>
+                <option value="daylight">Daylight</option>
+                <option value="highContrast">High Contrast</option>
+                <option value="custom">Custom</option>
+                <option value="fallback" disabled>Emergency Fallback (Automatic)</option>
+            </select>
+            <div class="font-size-setting">
+                <label for="font-size-selector">Text Size</label>
+                <select id="font-size-selector" name="font-size" aria-describedby="font-size-help">
+                    <option value="100">Standard (100%)</option>
+                    <option value="125">Large (125%)</option>
+                    <option value="150">Extra Large (150%)</option>
+                    <option value="200">Maximum (200%)</option>
+                </select>
+                <p id="font-size-help">Changes text size throughout the prototype, independently of the color theme.</p>
+                <p id="font-size-message" role="status" aria-live="polite"></p>
+            </div>
+            <div class="line-spacing-setting">
+                <label for="line-spacing-selector">Line Spacing</label>
+                <select id="line-spacing-selector" name="line-spacing" aria-describedby="line-spacing-help">
+                    <option value="compact">Compact (1.4)</option>
+                    <option value="comfortable">Comfortable (1.6)</option>
+                    <option value="spacious">Spacious (1.9)</option>
+                </select>
+                <p id="line-spacing-help">Adjusts the space between lines of text independently of text size and color theme.</p>
+                <p id="line-spacing-message" role="status" aria-live="polite"></p>
+                <p class="readability-preview">Readability preview: The path ahead is uncertain, but every choice shapes your journey. Take time to explore, prepare, and discover what awaits.</p>
+            </div>
+            <div class="letter-spacing-setting">
+                <label for="letter-spacing-selector">Letter Spacing</label>
+                <select id="letter-spacing-selector" name="letter-spacing" aria-describedby="letter-spacing-help">
+                    <option value="normal">Normal (default)</option>
+                    <option value="relaxed">Relaxed (0.03em)</option>
+                    <option value="wide">Wide (0.06em)</option>
+                </select>
+                <p id="letter-spacing-help">Adjusts the space between characters. This setting is independent of text size, line spacing, and color theme.</p>
+                <p id="letter-spacing-message" role="status" aria-live="polite"></p>
+                <p class="letter-spacing-preview">Letter spacing preview: Explore the world, read each clue carefully, and decide where your journey leads next.</p>
+            </div>
+            <div class="word-spacing-setting">
+                <label for="word-spacing-selector">Word Spacing</label>
+                <select id="word-spacing-selector" name="word-spacing" aria-describedby="word-spacing-help">
+                    <option value="normal">Normal (default)</option>
+                    <option value="relaxed">Relaxed (0.1em)</option>
+                    <option value="wide">Wide (0.2em)</option>
+                </select>
+                <p id="word-spacing-help">Adjusts the space between words independently of text size, line spacing, letter spacing, and color theme.</p>
+                <p id="word-spacing-message" role="status" aria-live="polite"></p>
+                <p class="word-spacing-preview">Word spacing preview: Explore the world, read each clue carefully, and decide where your journey leads next.</p>
+            </div>
+            <div class="paragraph-spacing-setting">
+                <label for="paragraph-spacing-selector">Paragraph Spacing</label>
+                <select id="paragraph-spacing-selector" name="paragraph-spacing" aria-describedby="paragraph-spacing-help">
+                    <option value="compact">Compact (0.5em)</option>
+                    <option value="comfortable">Comfortable (1em)</option>
+                    <option value="spacious">Spacious (1.5em)</option>
+                </select>
+                <p id="paragraph-spacing-help">Adjusts the gap between paragraphs in game narrative text. Independent of text size, line spacing, letter spacing, word spacing, and colors.</p>
+                <p id="paragraph-spacing-message" role="status" aria-live="polite"></p>
+                <div class="game-prose paragraph-spacing-preview" aria-label="Paragraph spacing preview">
+                    <p>The trail winds through the quiet forest. You notice footprints leading toward an old stone bridge.</p>
+                    <p>Across the bridge, a lantern glows in a distant window. The next decision is yours.</p>
+                    <p>You check your supplies before moving forward, knowing the journey may be long.</p>
+                </div>
+            </div>
+            <div class="font-family-setting">
+                <label for="font-family-selector">Font Style</label>
+                <select id="font-family-selector" name="font-family" aria-describedby="font-family-help">
+                    <option value="sans">Sans Serif (default)</option>
+                    <option value="serif">Serif</option>
+                    <option value="mono">Monospace</option>
+                </select>
+                <p id="font-family-help">Changes the text font independently of size, spacing, and colors. Uses fonts already available on your device.</p>
+                <p id="font-family-message" role="status" aria-live="polite"></p>
+                <p class="font-family-preview">Font preview: The old map reveals a hidden passage beneath the mountain. Choose your next step carefully.</p>
+            </div>
+            <div class="reading-width-setting">
+                <label for="reading-width-selector">Reading Width</label>
+                <select id="reading-width-selector" name="reading-width" aria-describedby="reading-width-help">
+                    <option value="narrow">Narrow (45 characters)</option>
+                    <option value="standard">Standard (65 characters)</option>
+                    <option value="wide">Wide (85 characters)</option>
+                </select>
+                <p id="reading-width-help">Controls the maximum line length of game narrative text. On smaller screens, text automatically fits the available width.</p>
+                <p id="reading-width-message" role="status" aria-live="polite"></p>
+                <div class="game-prose reading-width-preview" aria-label="Reading width preview">
+                    <p>You follow a narrow trail toward the mountain pass, watching the changing sky for signs of a storm. Every step brings you closer to the forgotten watchtower.</p>
+                    <p>At the edge of the clearing, you find a weathered sign and a path leading into the trees. Your supplies are limited, so you consider the safest way forward.</p>
+                </div>
+            </div>
+            <div class="readability-reset-setting">
+                <h3>Restore Readability Defaults</h3>
+                <p id="readability-reset-help">Restores text size, font style, line spacing, letter spacing, word spacing, paragraph spacing, and reading width. Your color theme and all seven custom colors will not change.</p>
+                <button type="button" id="reset-readability-button" aria-describedby="readability-reset-help">Reset Readability Settings</button>
+                <p id="readability-reset-message" role="status" aria-live="polite"></p>
+            </div>
+            <div class="color-reset-setting">
+                <h3>Restore Color Defaults</h3>
+                <p id="color-reset-help">Restores the Midnight color theme and the original seven Custom colors. Your seven readability preferences will not change.</p>
+                <button type="button" id="reset-colors-button" aria-describedby="color-reset-help">Reset Color Settings</button>
+                <p id="color-reset-message" role="status" aria-live="polite"></p>
+            </div>
+            <div class="appearance-reset-all-setting">
+                <h3>Restore All Appearance Defaults</h3>
+                <p id="appearance-reset-all-help">Restores the Midnight theme, all seven Custom colors, and all seven readability preferences. Export a JSON backup first if you want to keep your current settings. This also clears any pending Undo Last Import action.</p>
+                <button type="button" id="reset-all-appearance-button" aria-describedby="appearance-reset-all-help">Reset All Appearance Settings</button>
+                <p id="appearance-reset-all-message" role="status" aria-live="polite"></p>
+            </div>
+            <div class="appearance-export-setting">
+                <h3>Back Up Appearance Settings</h3>
+                <p id="appearance-export-help">Download a JSON backup of your current color theme, all seven Custom colors, and all seven readability preferences. This does not change any settings. Keep the file somewhere safe. You can restore it with Import Appearance Settings.</p>
+                <button type="button" id="export-appearance-button" aria-describedby="appearance-export-help">Export Appearance Settings</button>
+                <p id="appearance-export-message" role="status" aria-live="polite"></p>
+                <p id="appearance-copy-help">Copy a readable summary of your current theme, seven Custom colors, and seven readability preferences. No settings will change.</p>
+                <button type="button" id="copy-appearance-summary-button" aria-describedby="appearance-copy-help">Copy Appearance Summary</button>
+                <p id="appearance-copy-message" role="status" aria-live="polite"></p>
+                <p id="appearance-download-help">Save the same readable appearance summary as a text file for reference or support. This is not an importable JSON backup.</p>
+                <button type="button" id="download-appearance-summary-button" aria-describedby="appearance-download-help">Download Appearance Summary (.txt)</button>
+                <p id="appearance-download-message" role="status" aria-live="polite"></p>
+                <section class="appearance-live-summary" aria-label="Live Appearance Summary">
+                    <details id="appearance-live-summary-details" open>
+                        <summary>Live Appearance Summary <span class="appearance-summary-toggle-hint">(show / hide)</span></summary>
+                        <p>Read-only preview of your current appearance. Updates when preferences change; copying or downloading remains optional.</p>
+                        <pre id="appearance-live-summary-text" aria-label="Current appearance settings"></pre>
+                    </details>
+                    <p id="appearance-customization-status" class="appearance-customization-status" role="status" aria-live="polite">Customized preferences: 0 of 14</p>
+                    <p id="appearance-summary-display-status" class="appearance-summary-display-status" role="status" aria-live="polite">Summary display: Expanded</p>
+                    <button type="button" id="reset-summary-display-button" aria-describedby="reset-summary-display-help">Reset Summary Display</button>
+                    <p id="reset-summary-display-help">Expand the Live Appearance Summary and remember that display preference. Appearance settings are unchanged.</p>
+                    <p id="reset-summary-display-message" role="status" aria-live="polite"></p>
+                </section>
+            </div>
+            <div class="appearance-import-setting">
+                <h3>Restore Appearance Backup</h3>
+                <p id="appearance-import-help">Select a PhoenixDestitute appearance JSON backup. The file is checked before anything changes, and you can review all settings before confirming the replacement of your current colors and readability preferences.</p>
+                <label for="appearance-import-file">Appearance backup JSON file</label>
+                <input type="file" id="appearance-import-file" accept=".json,application/json" aria-describedby="appearance-import-help">
+                <button type="button" id="import-appearance-button" aria-describedby="appearance-import-help">Import Appearance Settings</button>
+                <p id="appearance-import-message" role="status" aria-live="polite"></p>
+                <button type="button" id="undo-appearance-import-button" disabled aria-describedby="undo-appearance-import-help">Undo Last Import</button>
+                <p id="undo-appearance-import-help">Available only after a successful import on this page. Refreshing clears this undo option.</p>
+                <p id="undo-appearance-import-message" role="status" aria-live="polite"></p>
+            </div>
+            <div id="custom-color-settings" hidden>
+                <h3>Custom Theme Colors</h3>
+                <div class="color-picker-setting">
+                    <span id="label-panel-color" class="color-picker-label">Panel Background Color</span>
+                    <input type="hidden" id="custom-panel-color" name="custom-panel-color" value="#202d3a">
+                    <button type="button" id="open-panel-picker" class="custom-picker-trigger"
+                        aria-haspopup="dialog" aria-labelledby="label-panel-color open-panel-picker-text">
+                        <span id="panel-color-swatch" class="custom-picker-swatch" aria-hidden="true"></span>
+                        <span id="open-panel-picker-text">Choose color</span>
+                    </button>
+                </div>
+                <div class="color-picker-setting">
+                    <span id="label-text-color" class="color-picker-label">Primary Text Color</span>
+                    <input type="hidden" id="custom-text-color" name="custom-text-color" value="#f1f5f9">
+                    <button type="button" id="open-text-picker" class="custom-picker-trigger"
+                        aria-haspopup="dialog" aria-labelledby="label-text-color open-text-picker-text">
+                        <span id="text-color-swatch" class="custom-picker-swatch" aria-hidden="true"></span>
+                        <span id="open-text-picker-text">Choose color</span>
+                    </button>
+                </div>
+                <div class="color-picker-setting">
+                    <span id="label-muted-color" class="color-picker-label">Muted Text Color</span>
+                    <input type="hidden" id="custom-muted-color" name="custom-muted-color" value="#c0ccd9">
+                    <button type="button" id="open-muted-picker" class="custom-picker-trigger"
+                        aria-haspopup="dialog" aria-labelledby="label-muted-color open-muted-picker-text">
+                        <span id="muted-color-swatch" class="custom-picker-swatch" aria-hidden="true"></span>
+                        <span id="open-muted-picker-text">Choose color</span>
+                    </button>
+                </div>
+                <div class="color-picker-setting">
+                    <span id="label-accent-color" class="color-picker-label">Accent Color</span>
+                    <input type="hidden" id="custom-accent-color" name="custom-accent-color" value="#e5c78e">
+                    <button type="button" id="open-accent-picker" class="custom-picker-trigger"
+                        aria-haspopup="dialog" aria-labelledby="label-accent-color open-accent-picker-text">
+                        <span id="accent-color-swatch" class="custom-picker-swatch" aria-hidden="true"></span>
+                        <span id="open-accent-picker-text">Choose color</span>
+                    </button>
+                </div>
+                <div class="color-picker-setting">
+                    <span id="label-border-color" class="color-picker-label">Border Color</span>
+                    <input type="hidden" id="custom-border-color" name="custom-border-color" value="#718298">
+                    <button type="button" id="open-border-picker" class="custom-picker-trigger"
+                        aria-haspopup="dialog" aria-labelledby="label-border-color open-border-picker-text">
+                        <span id="border-color-swatch" class="custom-picker-swatch" aria-hidden="true"></span>
+                        <span id="open-border-picker-text">Choose color</span>
+                    </button>
+                </div>
+                <div class="color-picker-setting">
+                    <span id="label-background-color" class="color-picker-label">Page Background Color</span>
+                    <input type="hidden" id="custom-background-color" name="custom-background-color" value="#111820">
+                    <button type="button" id="open-background-picker" class="custom-picker-trigger"
+                        aria-haspopup="dialog" aria-labelledby="label-background-color open-background-picker-text">
+                        <span id="background-color-swatch" class="custom-picker-swatch" aria-hidden="true"></span>
+                        <span id="open-background-picker-text">Choose color</span>
+                    </button>
+                </div>
+                <div class="color-picker-setting">
+                    <span id="label-button-color" class="color-picker-label">Button Background Color</span>
+                    <input type="hidden" id="custom-button-color" name="custom-button-color" value="#b5c8db">
+                    <button type="button" id="open-button-picker" class="custom-picker-trigger"
+                        aria-haspopup="dialog" aria-labelledby="label-button-color open-button-picker-text">
+                        <span id="button-color-swatch" class="custom-picker-swatch" aria-hidden="true"></span>
+                        <span id="open-button-picker-text">Choose color</span>
+                    </button>
+                </div>
+                <p id="custom-color-message" role="status" aria-live="polite"></p>
+                <button type="button" class="game-button-preview" id="game-button-preview">Example game button</button>
+            </div>
+        </section>
+        </details>
+    </main>
+
+    <dialog id="custom-color-dialog" class="custom-color-dialog" aria-labelledby="picker-title" aria-describedby="picker-instructions">
+        <div class="picker-content">
+            <h2 id="picker-title">Choose accent color</h2>
+            <p id="picker-instructions" class="picker-instructions">Use Tab to move between controls, arrow keys to adjust sliders, Enter or Space to choose a preset, and Escape to cancel.</p>
+            <div id="picker-preview" class="picker-preview" role="img" aria-label="Selected color preview"></div>
+            <label for="picker-hue">Hue</label>
+            <input id="picker-hue" type="range" min="0" max="360" value="36">
+            <label for="picker-saturation">Saturation</label>
+            <input id="picker-saturation" type="range" min="0" max="100" value="65">
+            <label for="picker-lightness">Lightness</label>
+            <input id="picker-lightness" type="range" min="0" max="100" value="60">
+            <label for="picker-hex">Hexadecimal color</label>
+            <input id="picker-hex" type="text" maxlength="7" pattern="#[0-9a-fA-F]{6}" spellcheck="false" autocomplete="off" inputmode="text" value="#e5c78e" aria-describedby="picker-status">
+            <div class="picker-presets" role="group" aria-label="Suggested colors">
+                <button type="button" data-color="#ffffff" aria-label="White"></button>
+                <button type="button" data-color="#000000" aria-label="Black"></button>
+                <button type="button" data-color="#e5c78e" aria-label="Gold"></button>
+                <button type="button" data-color="#ff0080" aria-label="Pink"></button>
+                <button type="button" data-color="#ff0000" aria-label="Red"></button>
+                <button type="button" data-color="#22c55e" aria-label="Green"></button>
+                <button type="button" data-color="#3b82f6" aria-label="Blue"></button>
+                <button type="button" data-color="#a855f7" aria-label="Purple"></button>
+            </div>
+            <p id="picker-status" role="status" aria-live="polite"></p>
+            <div class="picker-actions">
+                <button type="button" id="picker-cancel">Cancel</button>
+                <button type="button" id="picker-apply">Apply color</button>
+            </div>
+        </div>
+    </dialog>
+    <!-- Part 39: Review a validated backup before changing any saved settings. -->
+    <dialog id="appearance-import-preview-dialog" class="appearance-import-preview-dialog"
+            aria-labelledby="appearance-import-preview-title" aria-describedby="appearance-import-preview-description">
+        <h2 id="appearance-import-preview-title">Review Appearance Backup</h2>
+        <p id="appearance-import-preview-description">Compare imported settings with your current preferences. Changed values are identified below. Nothing changes until you select Import these settings.</p>
+        <div id="appearance-import-preview-content"></div>
+        <form method="dialog" class="appearance-import-preview-actions">
+            <button type="submit" value="cancel">Cancel</button>
+            <button type="submit" value="import" id="appearance-import-preview-confirm">Import these settings</button>
+        </form>
+    </dialog>
+    <script src="{% static 'game/prototype/player-api.js' %}" defer></script>
+    <script src="{% static 'game/prototype/appearance.js' %}"></script>
+    <script src="{% static 'game/prototype/color-picker.js' %}"></script>
+</body>
+</html>

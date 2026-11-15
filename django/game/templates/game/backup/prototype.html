@@ -1,0 +1,89 @@
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PhoenixDestitute - Frontend Prototype</title>
+    <link rel="stylesheet" href="{% static 'game/prototype/prototype.css' %}">
+</head>
+<body>
+    <main class="prototype-container">
+        <section class="panel">
+            <h1>PhoenixDestitute</h1>
+            <p>Responsive frontend prototype is working!</p>
+        </section>
+        <section class="panel appearance-settings" aria-labelledby="appearance-heading">
+            <h2 id="appearance-heading">Appearance Settings</h2>
+            <label for="theme-selector">Color Theme</label>
+            <select id="theme-selector" name="theme">
+                <option value="midnight">Midnight</option>
+                <option value="daylight">Daylight</option>
+                <option value="highContrast">High Contrast</option>
+                <option value="custom">Custom</option>
+                <option value="fallback" disabled>Emergency Fallback (Automatic)</option>
+            </select>
+            <div id="custom-color-settings" hidden>
+                <h3>Custom Theme Colors</h3>
+                <label for="custom-panel-color">
+                    Panel Background Color
+                </label>
+                <input
+                    type="color"
+                    id="custom-panel-color"
+                    name="custom-panel-color"
+                    value="#202d3a"
+                >
+                <label for="custom-text-color">
+                    Primary Text Color
+                </label>
+                <input
+                    type="color"
+                    id="custom-text-color"
+                    name="custom-text-color"
+                    value="#f1f5f9"
+                >
+                <label for="custom-muted-color">
+                    Muted Text Color
+                </label>
+                <input
+                    type="color"
+                    id="custom-muted-color"
+                    name="custom-muted-color"
+                    value="#c0ccd9"
+                >
+                <label for="custom-accent-color">
+                    Accent Color
+                </label>
+                <input
+                    type="color"
+                    id="custom-accent-color"
+                    name="custom-accent-color"
+                    value="#e5c78e"
+                >
+                <label for="custom-border-color">
+                    Border Color
+                </label>
+                <input
+                    type="color"
+                    id="custom-border-color"
+                    name="custom-border-color"
+                    value="#718298"
+                >
+                <label for="custom-background-color">
+                    Page Background Color
+                </label>
+                <input
+                    type="color"
+                    id="custom-background-color"
+                    name="custom-background-color"
+                    value="#111820"
+                >
+                <p id="custom-color-message" role="status" aria-live="polite"></p>
+            </div>
+        </section>
+    </main>
+    <script src="{% static 'game/prototype/appearance.js' %}"></script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Django
+db.sqlite3
+*.sqlite3
+staticfiles/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Development files
+.vscode/
+.idea/
+
+# Backups and archives
+*.zip
+*.7z
+
+# System files
+Thumbs.db
+.DS_Store
+
+# Frontend dependencies
+node_modules/
+dist/
+build/
