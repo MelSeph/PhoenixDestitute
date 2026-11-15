@@ -80,3 +80,16 @@ Regression inventory-at-death and mastery diminishing returns remain approved *f
 | Do not expose life-transition APIs yet | Death snapshots, attribute resets, and inventory transfers not implemented |
 
 **Boundary:** Any old browser session cookie is needed to access its saved Player. Current implementation does not offer an account-recovery route or assign another player's save from a supplied ID.
+
+
+## Phase 2F — Inventory identity and death snapshot foundation — 2026-11-15
+
+| Decision | Rationale / limitation |
+|---|---|
+| Create a minimal relational InventoryItem holding item/batch identity, properties, quantity and carried/equipped/stored placement | Ensure a persistent item identity survives Regression; ordinary stored/equipped items are excluded. This is a new backend foundation, **not** a conversion of the existing GameSave JSON. |
+| Capture a per-death immutable-by-service list of carried inventory slots as DeathSnapshot and DeathSnapshotEntry | Death-time eligibility must not be determined by changes made after death; multiple deaths per playthrough are possible after Resurrection. |
+| Provide a backend-only atomic `regress_from_death_snapshot` helper | Uses existing Phase 2C lifecycle transition and moves existing item rows without cloning them; refuses stale or already-used snapshots. |
+| Do not expose a death endpoint or wire to actual combat | The live JS inventory is not yet mapped to relational inventory. Caller must freeze inventory at death; unrelated model writes are not globally prevented. |
+| No hardcoded slot capacity | Inventory size and stack limits have not been finalized; the slot represents placement, not an approved capacity rule. |
+
+**Implementation boundary:** no changes to the legacy original, browser save/load API, Player or GameSave. No automatic material conversion, stat resets, world timeline simulation, or player death hook. Snapshot rows should only be created via the dedicated backend service. Item `properties` currently represents instance-specific attributes and is not a substitute for a future ItemDefinition / MaterialBatch schema.

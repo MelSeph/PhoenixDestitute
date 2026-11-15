@@ -166,3 +166,96 @@ class Playthrough(models.Model):
 
     def __str__(self):
         return f"Playthrough {self.pk} ({self.transition_type})"
+
+
+class InventoryItem(models.Model):
+    """One persistent item instance or homogeneous stack in one life.
+
+    This is separate from the legacy GameSave JSON and is not yet populated by
+    browser gameplay. An equipment item has quantity 1; materials may be stacks.
+    """
+
+    class Kind(models.TextChoices):
+        EQUIPMENT = "equipment", "Equipment"
+        MATERIAL = "material", "Material"
+        CONSUMABLE = "consumable", "Consumable"
+
+    class Location(models.TextChoices):
+        CARRIED = "carried", "Carried inventory"
+        EQUIPPED = "equipped", "Equipped"
+        STORED = "stored", "World storage"
+
+    playthrough = models.ForeignKey(
+        Playthrough, on_delete=models.PROTECT, related_name="inventory_items"
+    )
+    definition_key = models.CharField(max_length=100)
+    kind = models.CharField(max_length=16, choices=Kind.choices)
+    quantity = models.PositiveIntegerField(default=1)
+    # Immutable item identity is its primary key; persistent instance attributes
+    # (including enhancement/durability or material-batch quality) live here.
+    properties = models.JSONField(default=dict)
+    location = models.CharField(max_length=16, choices=Location.choices)
+    slot = models.PositiveIntegerField(null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["playthrough", "slot"],
+                condition=models.Q(location="carried"),
+                name="unique_carried_slot_per_life",
+            ),
+            models.CheckConstraint(
+                condition=(models.Q(location="carried", slot__isnull=False)
+                           | (~models.Q(location="carried") & models.Q(slot__isnull=True))),
+                name="inventory_slot_matches_location",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(quantity__gte=1), name="inventory_positive_quantity"
+            ),
+        ]
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        super().clean()
+        errors = {}
+        if self.kind == self.Kind.EQUIPMENT and self.quantity != 1:
+            errors["quantity"] = "Equipment must be a single item instance."
+        if self.location == self.Location.CARRIED and self.slot is None:
+            errors["slot"] = "Carried inventory requires an inventory slot."
+        if self.location != self.Location.CARRIED and self.slot is not None:
+            errors["slot"] = "Only carried items occupy inventory slots."
+        if self.playthrough_id is not None and self.playthrough.status != Playthrough.Status.ACTIVE and self._state.adding:
+            errors["playthrough"] = "New inventory must belong to an active life."
+        if errors:
+            raise ValidationError(errors)
+
+
+class DeathSnapshot(models.Model):
+    """An immutable-by-service record of the carried slots at one death."""
+
+    playthrough = models.ForeignKey(
+        Playthrough, on_delete=models.PROTECT, related_name="death_snapshots"
+    )
+    captured_at = models.DateTimeField(auto_now_add=True)
+    transferred_to = models.OneToOneField(
+        Playthrough, null=True, blank=True, on_delete=models.PROTECT,
+        related_name="regression_source_snapshot",
+    )
+
+
+class DeathSnapshotEntry(models.Model):
+    """A copied death-time quantity/properties plus a link to item identity."""
+
+    snapshot = models.ForeignKey(
+        DeathSnapshot, on_delete=models.PROTECT, related_name="entries"
+    )
+    item = models.ForeignKey(InventoryItem, on_delete=models.PROTECT, related_name="death_entries")
+    slot = models.PositiveIntegerField()
+    quantity = models.PositiveIntegerField()
+    properties = models.JSONField(default=dict)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["snapshot", "slot"], name="one_entry_per_death_slot"),
+            models.UniqueConstraint(fields=["snapshot", "item"], name="one_entry_per_death_item"),
+        ]

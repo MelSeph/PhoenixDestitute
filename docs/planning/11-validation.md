@@ -57,3 +57,14 @@ Do not convert a partial check into a passed check without doing the work.
 - No schema change/migration; `makemigrations --check --dry-run` must report none.
 - Runtime tests **pending on user's Django environment**. Expected discovery: 47 tests (previous 37 + 10 new).
 - API cannot restore ownership of anonymous saves after browser session loss; no account authorization is implemented.
+
+
+## Phase 2F — backend-only inventory and death snapshots
+
+- Add migration `0007_inventory_death_snapshots` (three models + inventory integrity constraints). Back up `django/db.sqlite3` before migration.
+- Snapshot only carried inventory slots; equipped and world-stored possessions remain with the old life.
+- Regression moves existing item instance IDs to the new life; original snapshot retains copied quantity/properties.
+- Abort on stale snapshots, replayed snapshots and cross-Legacy access. No frontend/combat hooks.
+- No conversion of saved JSON to relational inventory: live gameplay still uses its existing save format.
+- Run `python manage.py check`, `python manage.py makemigrations --check --dry-run`, `python manage.py migrate`, `python manage.py test game`, `python manage.py showmigrations game`. Previous baseline 47; 13 tests added (expect 60).
+- Django runtime verification must be performed locally before treating Phase 2F as complete.
