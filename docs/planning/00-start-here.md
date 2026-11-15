@@ -6,6 +6,8 @@
 
 **Latest update:** Phase 2Q was pushed at `3e990e7`. The user subsequently requested a local database purge and then explicitly changed in-game Delete to permanent erasure of the selected story and history, superseding logical deletion. Implemented locally with ownership/name checks, ordered deletion, and atomic rollback; see [28-permanent-character-deletion.md](28-permanent-character-deletion.md). All 298 Django tests and 8 character-management browser tests pass; production build succeeds. No new migration, commit, or push for this update.
 
+**Admin update:** Permanent deletion was pushed at `a3c2a7a`. The user requested Django admin screens; `game/admin.py` now registers all game models with read-only state/catalog inspection, related inlines, and editable existing game preferences. See [29-django-admin.md](29-django-admin.md). All 305 Django tests pass; no migration or account/password changes. Admin work is not committed/pushed yet.
+
 The equipment-adaptation preference is now persisted through a session-scoped API, defaulting to player-controlled timing: [15-game-settings.md](15-game-settings.md). Migration 0010 is applied locally and the full suite has 113 passing tests. Automatic adaptation/scoring remains unimplemented; the preference alone does not change gear.
 
 ## Read next

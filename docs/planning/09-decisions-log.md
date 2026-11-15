@@ -323,3 +323,9 @@ The user explicitly requested deleting any saved character records from the data
 The user then required in-game deletion to completely destroy the selected character. This supersedes the soft-delete decision: the service now permanently erases the entire owned story and its history after typed-name confirmation, without making a recovery copy. Other stories/shared definitions remain intact, and external protected references trigger atomic rollback. Existing external backups are not altered. See [28-permanent-character-deletion.md](28-permanent-character-deletion.md). Validation: 298 Django tests, 8 character-management browser tests, and production build pass. No commit/push.
 
 The user subsequently authorized committing and pushing the permanent-deletion changes with “commit and push”. Validation remains 298 Django tests, 8 character-management browser tests, and production build passing. No hosting deployment is included.
+
+## Django admin screens — 2026-11-15
+
+The user requested admin screens via `admin.py`. Added searchable/filterable inspection screens for all game models and related inlines. Initial game state/catalog screens are read-only, with add/edit/delete and bulk deletion blocked so admin cannot bypass game services. Existing equipment-adaptation preferences are editable with fixed ownership. Session credentials are masked. No accounts or passwords are created/changed. See [29-django-admin.md](29-django-admin.md); seven new tests and all 305 Django tests pass. No schema change, commit, or push.
+
+The user subsequently authorized committing and pushing the admin screens with “commit and push”. Validation: all 305 Django tests pass, system checks pass, and no migration drift is detected. No deployment or account changes are included.
