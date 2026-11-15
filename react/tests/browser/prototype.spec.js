@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test.beforeEach(async ({ page }) => {
-  await page.route('**/api/player/', route => route.fulfill({ status: 404, json: { error: 'No local character exists yet.' } }));
+  await page.route('**/api/creation/stats/', route => route.fulfill({ status: 404, json: { error: 'No birth stat draft in this session.' } }));
   await page.goto('/');
 });
 async function options(page) { await page.getByText('Options', { exact: true }).click(); }
@@ -64,19 +64,6 @@ test('import review cancellation, confirmation, undo, and malformed backup rejec
   await expect(page.getByText(/Could not import:/)).toBeVisible();
   await expect(page.getByLabel('Color Theme')).toHaveValue('daylight');
 });
-test('character creation initializes CSRF and uses the server response', async ({ page }) => {
-  let created = false;
-  await page.route('**/prototype/', route => route.fulfill({ status: 200, headers: { 'set-cookie': 'csrftoken=frontend-test-token; Path=/; SameSite=Lax' }, body: '<html></html>' }));
-  await page.route('**/api/player/create/', async route => {
-    expect(route.request().headers()['x-csrftoken']).toBe('frontend-test-token');
-    created = true;
-    await route.fulfill({ status: 201, json: { player: { name: 'Server Character', level: 4, experience: 12 } } });
-  });
-  await page.getByRole('button', { name: 'Create local character', exact: true }).click();
-  await expect(page.getByText('Server Character — Level 4 — Experience 12')).toBeVisible();
-  expect(created).toBe(true);
-  await expect(page.getByRole('button', { name: 'Create local character', exact: true })).not.toBeVisible();
-});
 test('mobile layout fits at 200% text and modal traps keyboard focus', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 375, height: 812 });
   await options(page);
@@ -90,8 +77,9 @@ test('mobile layout fits at 200% text and modal traps keyboard focus', async ({ 
   expect(await page.evaluate(() => document.activeElement.closest('dialog') !== null)).toBe(true);
   await page.keyboard.press('Escape');
 });
-test('backend errors are visible and do not fabricate a character', async ({ page }) => {
-  await page.route('**/api/player/', route => route.fulfill({ status: 503, json: { error: 'Unavailable' } }));
-  await page.getByRole('button', { name: 'Reload character' }).click();
-  await expect(page.getByText('Could not load character: HTTP 503')).toBeVisible();
+test('backend errors are visible and do not fabricate a birth draft', async ({ page }) => {
+  await page.route('**/api/creation/stats/', route => route.fulfill({ status: 503, body: 'Unavailable' }));
+  await page.getByRole('button', { name: 'Reload draft' }).click();
+  await expect(page.getByText('Could not load your birth draft: HTTP 503')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Roll starting attributes', exact: true })).not.toBeVisible();
 });

@@ -161,3 +161,7 @@ Do not convert a partial check into a passed check without doing the work.
 ## React prototype port — 2026-11-15
 
 The authorized React port adds no Django/backend changes. All 254 existing Django tests pass, none skipped. The new app passes 6 settings tests, 7 Edge browser checks, and its Vite production build. A live Django integration check verifies CSRF and session persistence through the Vite proxy using a temporary database. Desktop/mobile layouts and keyboard dialogs are covered; desktop screenshot visually inspected. See [24-react-prototype-port.md](24-react-prototype-port.md) and [react/README.md](../../react/README.md). No commit, push, or deployment performed.
+
+## Birth-first React UI — 2026-11-15
+
+All 254 Django tests pass, none skipped. The updated UI passes 6 settings tests and 14 Edge browser tests, including real birth-draft/session/CSRF persistence, unchanged existing characters, locks/switching/rerolls, stale and lost-response recovery, and mobile layout at 200% text. Production build succeeds. Test integration uses only a temporary database; no Django code/migrations, working-database writes, or legacy edits. Details: [25-birth-first-react-ui.md](25-birth-first-react-ui.md). No commit or push performed.
