@@ -25,7 +25,7 @@ async function fetchDraft(url, options = {}) {
   return body.draft;
 }
 
-export default function BirthCreationPanel() {
+export default function BirthCreationPanel({ readUrl = endpoint, disabled = false, onConfirmed, onStateChange }) {
   const [draft, setDraft] = useState(null);
   const [missing, setMissing] = useState(false);
   const [ready, setReady] = useState(false);
@@ -48,7 +48,11 @@ export default function BirthCreationPanel() {
     if (pending.current) return;
     pending.current = true;
     setBusy(true); setReady(false);
-    try { show(await fetchDraft(endpoint, { signal }), 'Your starting attributes are saved.'); }
+    try {
+      const next = await fetchDraft(readUrl, { signal });
+      show(next, 'Your starting attributes are saved.');
+      if (!next && readUrl !== endpoint) setStatus('This saved character is no longer available. Reload characters to choose another.');
+    }
     catch (error) {
       if (error.name !== 'AbortError') { setMissing(false); setStatus(`Could not load your birth draft: ${error.message}`); }
     } finally {
@@ -60,10 +64,10 @@ export default function BirthCreationPanel() {
     const controller = new AbortController();
     load(controller.signal);
     return () => controller.abort();
-  }, []);
+  }, [readUrl]);
 
   async function write(action, value) {
-    if (pending.current || (action !== 'start' && !ready)) return;
+    if (disabled || pending.current || (action !== 'start' && !ready)) return;
     if (draft?.birth) return;
     pending.current = true;
     setBusy(true); setReady(false); setMissing(false);
@@ -81,6 +85,7 @@ export default function BirthCreationPanel() {
         method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken() }, body: JSON.stringify(body),
       });
       show(next, action === 'reroll' ? 'Unlocked attributes rerolled. Locked attributes were preserved.' : 'Your starting attributes are saved.');
+      if (action === 'confirm') onConfirmed?.();
     } catch (error) {
       if (error.status === 409) {
         // Reading is safe. Never replay the rejected action using a new revision.
@@ -101,6 +106,8 @@ export default function BirthCreationPanel() {
   const locks = draft?.locked_stats ?? [];
   const dirty = Boolean(draft && identity && JSON.stringify(identity) !== JSON.stringify(draft.identity));
   const frozen = Boolean(draft?.birth);
+  const working = busy || disabled;
+  useEffect(() => { onStateChange?.({ busy, dirty }); }, [busy, dirty, onStateChange]);
   function toggleLock(key) {
     const next = locks.includes(key) ? locks.filter(value => value !== key) : [...locks, key];
     if (next.length <= 3) write('locks', next);
@@ -110,20 +117,20 @@ export default function BirthCreationPanel() {
     <h2 id="birth-heading">{frozen ? 'Your first life' : 'Begin your first life'}</h2>
     {!frozen && <p>Your story starts at birth. Shape your starting attributes with unlimited rolls and up to three locks.</p>}
     <p className="status" role="status" aria-live="polite">{status}</p>
-    {missing && <button disabled={busy} onClick={() => write('start')}>Roll starting attributes</button>}
+    {missing && readUrl === endpoint && <button disabled={working} onClick={() => write('start')}>Roll starting attributes</button>}
     {draft && <>
       {frozen && <><h3>{draft.identity.name} · Newborn</h3><p>Character ID: {draft.birth.character_id}</p>
         <AppearanceSummary identity={draft.identity} options={draft.identity_options} /><p>Your birth choices are confirmed. Training and age progression are not available yet.</p></>}
-      {!frozen && identity && draft.identity_options && <BirthIdentityForm identity={identity} options={draft.identity_options} disabled={busy || !ready} dirty={dirty} onChange={setIdentity} onSave={() => write('identity')} />}
+      {!frozen && identity && draft.identity_options && <BirthIdentityForm identity={identity} options={draft.identity_options} disabled={working || !ready} dirty={dirty} onChange={setIdentity} onSave={() => write('identity')} />}
       <fieldset className="birth-stats" aria-describedby="lock-help">
         <legend>Starting attributes</legend>
         <p id="lock-help">{frozen ? 'These are your confirmed birth attributes.' : `${locks.length} of 3 attributes locked. Unlock an attribute to choose a different lock. Unlocked values roll from 1 to 5.`}</p>
         {Object.entries(statLabels).map(([key, label]) => <div className="stat-row" key={key}>
           <span>{label}</span><output aria-label={`${label} value`}>{draft.stats[key]}</output>
-          {!frozen && <label className="stat-lock"><input type="checkbox" aria-label={`Lock ${label}`} checked={locks.includes(key)} disabled={busy || !ready || dirty || (!locks.includes(key) && locks.length >= 3)} onChange={() => toggleLock(key)} />Lock</label>}
+          {!frozen && <label className="stat-lock"><input type="checkbox" aria-label={`Lock ${label}`} checked={locks.includes(key)} disabled={working || !ready || dirty || (!locks.includes(key) && locks.length >= 3)} onChange={() => toggleLock(key)} />Lock</label>}
         </div>)}
       </fieldset>
-      {!frozen && <div className="actions"><button disabled={busy || !ready || dirty} onClick={() => write('reroll')}>Reroll unlocked attributes</button></div>}
+      {!frozen && <div className="actions"><button disabled={working || !ready || dirty} onClick={() => write('reroll')}>Reroll unlocked attributes</button></div>}
       <section aria-labelledby="resources-heading"><h3 id="resources-heading">Starting resources</h3>
         <div className="birth-resources">{Object.entries(resourceLabels).map(([key, [label, parent]]) => <div className="resource-preview" key={key}>
           <h4>{label}</h4><output aria-label={`${label} preview`}>{draft.resources[key].current} / {draft.resources[key].maximum}</output><p className="help">{parent} × 10 · Starts full</p>
@@ -132,11 +139,11 @@ export default function BirthCreationPanel() {
       <p className="help">Baseline Condition describes your starting physical condition. Your wellbeing will also depend on hunger, fatigue, illness, and injuries.</p>
       {!frozen && <div className="birth-confirmation">
         {draft.confirmation_blocked_reason && <p role="note">{draft.confirmation_blocked_reason}</p>}
-        <button disabled={busy || !ready || dirty || !draft.identity_complete || Boolean(draft.confirmation_blocked_reason)} onClick={() => setReview(draft)}>Review birth</button>
+        <button disabled={working || !ready || dirty || !draft.identity_complete || Boolean(draft.confirmation_blocked_reason)} onClick={() => setReview(draft)}>Review birth</button>
         <p className="help">Save a name, gender, and all applicable looks before reviewing. Confirmation makes your birth choices permanent.</p>
       </div>}
     </>}
-    <div className="actions"><button className="secondary" disabled={busy} onClick={() => { if (!dirty || window.confirm('Discard unsaved identity changes and reload the saved draft?')) load(); }}>{frozen ? 'Reload character' : 'Reload draft'}</button></div>
+    <div className="actions"><button className="secondary" disabled={working} onClick={() => { if (!dirty || window.confirm('Discard unsaved identity changes and reload the saved draft?')) load(); }}>{frozen ? 'Reload character' : 'Reload draft'}</button></div>
     {review && <Dialog title="Review your first birth" onClose={() => { if (!busy) setReview(null); }}>
       <AppearanceSummary identity={review.identity} options={review.identity_options} />
       <h3>Starting attributes</h3><dl className="comparison">{Object.entries(statLabels).map(([key, label]) => <React.Fragment key={key}><dt>{label}</dt><dd>{review.stats[key]}</dd></React.Fragment>)}</dl>

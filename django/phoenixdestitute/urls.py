@@ -6,8 +6,14 @@ from game import inventory_api
 from game import game_settings_api
 from game import thermal_api
 from game import birth_draft_api
+from game import character_api
 
 urlpatterns = [
+    path("api/characters/", character_api.characters, name="api-characters"),
+    path("api/characters/current/", character_api.current, name="api-character-current"),
+    path("api/characters/load/", character_api.load, name="api-character-load"),
+    path("api/characters/new/", character_api.new, name="api-character-new"),
+    path("api/characters/delete/", character_api.delete, name="api-character-delete"),
     path("admin/", admin.site.urls),
     path("", views.index, name="game-home"),
     path("prototype/", views.prototype, name="game-prototype"),

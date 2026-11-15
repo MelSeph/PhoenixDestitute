@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import BirthCreationPanel from './BirthCreationPanel.jsx';
+import CharacterManager from './CharacterManager.jsx';
 import ColorPicker from './ColorPicker.jsx';
 import Dialog from './Dialog.jsx';
 import { applyAppearance, backup, colorLabels, customizationCount, defaults, loadAppearance, readabilityOptions, saveAppearance, summary, summaryKey, themeLabels, validateBackup } from './appearance.js';
@@ -72,7 +72,7 @@ export default function App() {
 
   return <main className="prototype-container">
     <section className="panel"><h1>PhoenixDestitute</h1><p>Your journey begins with possibility.</p></section>
-    <BirthCreationPanel />
+    <CharacterManager />
     <details className="options-menu">
       <summary className="options-toggle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="m9 3-1 3-3 1-2 4 2 2 1 4 3 1 2 3 4-1 1-3 3-1 2-4-2-2-1-4-3-1-2-3Z" /><circle cx="12" cy="12" r="3" /></svg>Options</summary>
       <section className="panel appearance-settings" aria-labelledby="appearance-heading">

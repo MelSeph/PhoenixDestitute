@@ -173,3 +173,10 @@ All 254 Django tests pass, none skipped. The updated UI passes 6 settings tests 
 - `python manage.py check`: no issues. `makemigrations --check --dry-run`: no changes detected.
 - Created `django/db.phase2p-birth-backup.sqlite3` and verified its integrity; applied migration 0017 successfully. Compared all pre-existing game-table values before/after: preserved, including user draft rolls and locks. The new birth table remains empty in the working database.
 - Details: [26-birth-identity-confirmation.md](26-birth-identity-confirmation.md). Training/aging/current Condition remain future work. No legacy/prototype edits, commit, or push.
+
+## Phase 2Q — character management — 2026-11-15
+
+- **296 Django tests pass, none skipped** (21 new roster cases); all 6 settings tests pass.
+- **29 browser cases pass**: existing 21 plus 8 character load/new/delete cases, including old characters, ownership, draft preservation, lost responses, typed confirmation, and mobile keyboard/layout checks. Production build succeeds.
+- Migration 0018 applied after integrity-verifying `django/db.phase2q-character-roster-backup.sqlite3`. Before/after comparison preserved all pre-existing game rows; no working-data test births or deletions.
+- Django check reports no issues; migration drift check reports no changes. No legacy/prototype edits, commit, or push. See [27-character-management.md](27-character-management.md).

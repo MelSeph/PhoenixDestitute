@@ -41,14 +41,21 @@ def _payload(draft):
         identity_complete = False
     blocked = ""
     if not record and _existing_player(draft.session.get_decoded()):
-        blocked = "This browser session already has a character. Use a separate browser profile or private window to begin a new story without replacing it."
+        blocked = "This browser session already has a character. Choose New character in Your characters to begin a separate story without replacing it."
     return dict(draft_id=str(draft.pk), revision=str(draft.revision), stats=stats,
                 locked_stats=list(draft.locked_stats), resources=record.resources if record else birth_resources(stats),
                 identity=identity, identity_options=copy.deepcopy(BIRTH_IDENTITY_OPTIONS), identity_complete=identity_complete,
                 confirmation_blocked_reason=blocked,
-                birth=None if record is None else dict(character_id=str(record.playthrough.character_id),
-                    playthrough_id=str(record.playthrough_id), player_id=str(record.playthrough.legacy.player.pk),
-                    life_stage="newborn", confirmed_at=record.confirmed_at.isoformat()))
+                birth=None if record is None else birth_record_payload(record)["birth"])
+
+
+def birth_record_payload(record):
+    """Read a permanent birth without reconstructing or recreating its old draft."""
+    return dict(draft_id=str(record.source_draft_id), revision=str(record.source_revision), locked_stats=[],
+                stats=copy.deepcopy(record.stats), resources=copy.deepcopy(record.resources), identity=copy.deepcopy(record.identity),
+                identity_options=copy.deepcopy(BIRTH_IDENTITY_OPTIONS), identity_complete=True, confirmation_blocked_reason="",
+                birth=dict(character_id=str(record.playthrough.character_id), playthrough_id=str(record.playthrough_id),
+                    player_id=str(record.playthrough.legacy.player.pk), life_stage="newborn", confirmed_at=record.confirmed_at.isoformat()))
 
 
 def _birth(draft):
@@ -155,6 +162,8 @@ def confirm_birth(*, session_key, revision):
                          identity=copy.deepcopy(identity), stats=stats, resources=birth_resources(stats))
     record.full_clean()
     record.save()
+    from .models import LocalCharacter
+    LocalCharacter.objects.create(session=session, player=player)
     # Persist activation in the same transaction as the birth. A lost response or
     # middleware/session-save failure must not leave an orphaned duplicate birth.
     data["active_player_id"] = str(player.pk)

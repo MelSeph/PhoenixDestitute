@@ -23,7 +23,13 @@ def _session_player(request):
     if not identifier:
         return None
     try:
-        return Player.objects.get(pk=identifier, account__isnull=True)
+        player = Player.objects.get(pk=identifier, account__isnull=True)
+        from .models import LocalCharacter
+        ownership = LocalCharacter.objects.filter(player=player).first()
+        if ownership and (ownership.deleted_at is not None or ownership.session_id != request.session.session_key):
+            request.session.pop("active_player_id", None)
+            return None
+        return player
     except (Player.DoesNotExist, ValueError, TypeError):
         request.session.pop("active_player_id", None)
         return None

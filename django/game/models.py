@@ -43,6 +43,16 @@ class Player(models.Model):
         return self.name
 
 
+class LocalCharacter(models.Model):
+    """A session-owned saved story; deletion revokes play without erasing history."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    session = models.ForeignKey("sessions.Session", on_delete=models.CASCADE, related_name="local_characters")
+    player = models.OneToOneField(Player, on_delete=models.PROTECT, related_name="local_character")
+    created_at = models.DateTimeField(auto_now_add=True)
+    deleted_at = models.DateTimeField(null=True, blank=True)
+
+
 class PlayerGameSettings(models.Model):
     """Player preferences independent of any individual life or JSON save."""
 

@@ -42,12 +42,17 @@ That temporary runtime is outside the repository and may be removed by Windows. 
 - Session-owned birth stat drafts through Django: eight base attributes, unlimited explicit rerolls, up to three freely switchable locks, and server-provided full Health/Mana/Stamina previews. Loading or refreshing reads the saved draft; first-time rolling requires an explicit click.
 - Name and gender selection; skin/eye/hair presets with labeled color visuals, and illustrated Bald/Short/Medium/Long hair-length choices. Texture is selected separately. The catalog and color values come from Django.
 - Explicit identity save, complete birth review, final confirmation, and a permanent newborn summary with the Character ID. Gender/looks grant no stat bonuses.
+- A **Your characters** list with Load, New character, and typed-name Delete. Multiple saved stories remain selectable in the same browser session; unfinished drafts are preserved while switching.
 
 The active JavaScript theme palette is used instead of the prototype stylesheet's different pre-initialization colors. Repeated preview/help blocks are consolidated into a responsive settings grid and one narrative preview. The automatic contrast fallback uses High Contrast. Custom colors must meet the original text and control contrast thresholds before they are applied.
 
 The version-1 `phoenixdestitute-appearance` JSON backup format and existing preference key names are retained. Browser localStorage is scoped by origin (including port), so export from the Django prototype and import into React to transfer preferences. Session cookies are not scoped by port; using the same hostname retains session ownership. Appearance backups contain no game saves, birth drafts, or session credentials.
 
-The opening panel uses `/api/creation/stats/`, `/api/creation/stats/locks/`, `/api/creation/stats/reroll/`, `/api/creation/stats/identity/`, and `/api/creation/stats/confirm/`. It never calls the old local-character creation endpoint. Only final confirmation creates a permanent Player/Character/initial life through Django. Existing characters/saves remain intact even when their session prepares a draft; confirmation is blocked if that session already has an older local character. Use a separate browser profile/private window to test a separate new story without replacing it.
+The opening panel uses `/api/creation/stats/`, `/api/creation/stats/locks/`, `/api/creation/stats/reroll/`, `/api/creation/stats/identity/`, and `/api/creation/stats/confirm/`. It never calls the old local-character creation endpoint. Only final confirmation creates a permanent Player/Character/initial life through Django. Existing characters/saves remain intact; use **New character** to leave the current selection and start a separate story without replacing it. If an unfinished draft exists, New character resumes it rather than discarding its rolls or identity.
+
+**Load** selects that saved story for the existing backend APIs and resumes its confirmed birth snapshot without rolling or recreating the draft. Selection survives refresh. Older saved characters display their existing name/level/experience; the UI does not invent birth stats. Entries are scoped to the server-owned session, and Character IDs distinguish identical names.
+
+**Delete** opens a dialog requiring the exact character name. Cancellation leaves it intact. Deletion removes it from the playable list and blocks future loading/API access, while retaining its protected history internally; it is not a database purge. There is no restore action. Deleting the current character returns to creation; deleting another leaves the current story selected. Failed/uncertain requests require Reload characters instead of automatic retries. Anonymous access still depends on retaining the session cookie, and account recovery is not implemented.
 
 To create a character: roll starting attributes, choose a name/gender/looks, select **Save identity and looks**, adjust your rolls/locks if desired, then **Review birth** and **Confirm birth**. Unsaved identity edits must be saved before rolling/reviewing; Reload asks before discarding them. Review shows all saved appearance choices and server-rolled stats before anything becomes permanent. Bald clears and hides hair color/texture. Custom gender reveals a label field.
 
@@ -65,6 +70,7 @@ Only one draft request can run at a time. Changed-lock/reroll writes send the la
 4. `src/ColorPicker.jsx` and `src/Dialog.jsx` handle temporary color selection and accessible modal behavior.
 5. `src/BirthCreationPanel.jsx` reads/updates the session-owned draft and coordinates final review/confirmation. `src/BirthAppearance.jsx` renders the identity form, swatches/iris visuals, SVG length illustrations, and saved appearance summaries. Django owns presets, validation, rolls, resources, revisions, and permanent confirmation. Birth data never enters appearance backups/localStorage.
 6. `src/styles.css` retains the prototype's visual language with responsive controls and reduced-motion support.
+7. `src/CharacterManager.jsx` coordinates the saved-character list, selection, new creation, deletion, and unsaved-edit/pending-request guards. `/api/characters/` and its `current/`, `load/`, `new/`, and `delete/` routes enforce ownership in Django.
 
 ## Verify
 
@@ -78,6 +84,6 @@ Browser tests use installed Microsoft Edge by default. For another environment, 
 
 Browser tests require ports 8000 and 5173 to be free. They start Django using `tests/django_server.py` with a freshly migrated temporary database, plus Vite. They do not use or modify `django/db.sqlite3`. Live integration checks cover birth drafts/identity/visuals, locks/rerolls/resources, final review/confirmation, retries/lost responses, real CSRF/session behavior, and protection of older characters. Other scenarios mock API responses. Servers stop at the end of the test run. Screenshots and failure artifacts go in ignored `test-results/`.
 
-Verified: 6 settings tests, 21 browser tests, production build, and all 275 Django tests. Node 24.22.3, React 19.3.1, Vite 7.3.8; exact dependencies are locked in `package-lock.json`.
+Verified: 6 settings tests, 29 browser tests, production build, and all 296 Django tests. Node 24.22.3, React 19.3.1, Vite 7.3.8; exact dependencies are locked in `package-lock.json`.
 
 `npm run build` outputs ignored `dist/` files. `npm run preview` serves a static build for inspection; it does not include the development proxy. Production hosting must serve the React build and forward `/api/` and `/prototype/` to Django on the same origin. Deployment is not configured in this port.
