@@ -38,7 +38,12 @@ class GameAdminTests(TestCase):
         models.DeathSnapshotEntry.objects.create(snapshot=snapshot, item=item, slot=0, quantity=1, properties={})
 
     def setUp(self):
-        self.client.force_login(self.user)
+        self.login(self.user)
+
+    def login(self, user):
+        self.client.force_login(user)
+        self.client.cookies["phoenix_admin_session"] = self.client.cookies["sessionid"].value
+        del self.client.cookies["sessionid"]
 
     def url(self, model, action="changelist", obj=None):
         return reverse(f"admin:game_{model._meta.model_name}_{action}", args=[obj.pk] if obj else [])
@@ -92,7 +97,7 @@ class GameAdminTests(TestCase):
     def test_anonymous_and_nonstaff_users_are_redirected_to_admin_login(self):
         for client in [Client(), self.client]:
             if client is self.client:
-                client.force_login(get_user_model().objects.create_user(username="ordinary"))
+                self.login(get_user_model().objects.create_user(username="ordinary"))
             response = client.get(self.url(models.Character))
             self.assertEqual(response.status_code, 302)
             self.assertIn("/admin/login/", response.url)
@@ -100,7 +105,7 @@ class GameAdminTests(TestCase):
     def test_staff_view_permission_does_not_grant_other_screens_or_writes(self):
         viewer = get_user_model().objects.create_user(username="viewer", is_staff=True)
         viewer.user_permissions.add(Permission.objects.get(content_type__app_label="game", codename="view_character"))
-        self.client.force_login(viewer)
+        self.login(viewer)
         self.assertEqual(self.client.get(self.url(models.Character)).status_code, 200)
         self.assertEqual(self.client.get(self.url(models.Character, "change", models.Character.objects.first())).status_code, 200)
         self.assertEqual(self.client.get(self.url(models.BirthRecord)).status_code, 403)

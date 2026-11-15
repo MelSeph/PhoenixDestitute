@@ -8,6 +8,8 @@
 
 **Admin update:** Permanent deletion was pushed at `a3c2a7a`. The user requested Django admin screens; `game/admin.py` now registers all game models with read-only state/catalog inspection, related inlines, and editable existing game preferences. See [29-django-admin.md](29-django-admin.md). All 305 Django tests pass; no migration or account/password changes. Admin work is not committed/pushed yet.
 
+**Session fix:** Admin screens were pushed at `372ee64`. The user's browser-restart save-access report exposed shared admin/game session rotation deleting ownership links. Admin now uses a separate cookie; game cookies remain persistent, with compatibility recovery for proven old staff/game selections. See [30-session-persistence.md](30-session-persistence.md). All 309 Django tests and 9 relevant browser checks pass, including closing/reopening a real persistent profile. No migration or commit/push for this fix yet.
+
 The equipment-adaptation preference is now persisted through a session-scoped API, defaulting to player-controlled timing: [15-game-settings.md](15-game-settings.md). Migration 0010 is applied locally and the full suite has 113 passing tests. Automatic adaptation/scoring remains unimplemented; the preference alone does not change gear.
 
 ## Read next

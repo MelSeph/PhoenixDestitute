@@ -1,5 +1,7 @@
 # Planning validation — honest status
 
+Session persistence fix (2026-11-15): all 309 Django tests pass, none skipped. Nine browser cases pass, including a real persistent-profile browser close/reopen followed by loading the same saved character. Admin login/logout and old shared-session recovery are verified separately in Django tests. No migration or live-data reset. See [30-session-persistence.md](30-session-persistence.md).
+
 Django admin verification (2026-11-15): 7 new tests cover all registered game screens, populated lists/details/inlines, search/filter, permission guards, rejected writes/deletes, editable game preference, and masked Session credentials. All 305 Django tests pass, none skipped. System check passes; no migration drift. See [29-django-admin.md](29-django-admin.md).
 
 Latest permanent-deletion verification (2026-11-15): all 298 Django tests pass, none skipped; all 8 character-management browser tests pass; production build succeeds. Tests verify full story/history deletion and preservation of unrelated data, including atomic rollback on external protected references. No new migration. See [28-permanent-character-deletion.md](28-permanent-character-deletion.md).

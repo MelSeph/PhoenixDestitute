@@ -24,6 +24,8 @@ npm run dev
 
 Open **http://127.0.0.1:5173**. Use that hostname consistently so browser cookies stay associated with the same host. The Vite development server proxies `/api/` and the CSRF initialization request `/prototype/` to Django on port 8000. It preserves the original Host header, allowing Django's normal Origin/CSRF checks to pass without CORS or security-setting changes.
 
+The game cookie persists across normal browser restarts (Django's 14-day lifetime). Admin uses a separate cookie so admin login/logout cannot rotate or delete game ownership. After upgrading, admin may require signing in again. Keep using the same browser profile/hostname; clearing or expiring cookies still loses anonymous access. An old shared staff login is separated automatically while preserving only its proven game selection. No unrelated database characters are exposed for recovery.
+
 If using the temporary Node runtime downloaded during development on this machine, add it to the current PowerShell session before running npm:
 
 ```powershell
