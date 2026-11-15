@@ -32,3 +32,11 @@ Do not convert a partial check into a passed check without doing the work.
 **Result:** the Django snapshot is **incomplete as supplied**. It is **not established** that the user's live local project is incomplete. No runtime checks, migration checks, or app tests were run; do not mark them passed.
 
 **Suggested next evidence:** current local `django/` folder snapshot (without `.venv/`, `__pycache__/`, or secrets) and, separately if appropriate, the current model/migration files. Do not delete or replace existing work in order to obtain this evidence.
+
+## Phase 2C validation checklist — 2026-11-15
+
+- Django model schema unchanged; `makemigrations --check --dry-run` should report no changes.
+- New backend transition tests cover resurrection, regression, New Life with same character or new successor, predecessor chains, unprovisioned players, invalid outcomes, active-life constraints, and preservation of Player/GameSave.
+- In the user's local Django environment run `python manage.py check`, `python manage.py makemigrations --check --dry-run`, and `python manage.py test game`.
+- No death endpoint, game frontend transition, equipment transfer, character stat reset, or per-playthrough save migration is implemented.
+- **Runtime verification is pending** until the local Django test output is received. The earlier baseline was 16 passing tests; this phase adds 11 tests (expect 27).

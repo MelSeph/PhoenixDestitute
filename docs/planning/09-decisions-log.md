@@ -39,3 +39,17 @@
 | 2026-11-15 | Preserve `Player` and `GameSave`, link each Player to one Legacy, and backfill existing Player records to an initial Character/Playthrough | Existing saves must continue working while the new models become usable | Do not migrate GameSave, change player stats, implement transitions, or edit legacy_game | User: “make it so” after Phase 2B proposal |
 
 **Phase 2B design detail:** `Player.legacy` is a nullable one-to-one compatibility relationship. The active Playthrough identifies the current Character, avoiding a second mutable current-character foreign key on Player. New local players are provisioned atomically; migration `0005` backfills existing rows. Existing direct calls to `Player.objects.create` outside the API are not automatically provisioned; integration of additional creation paths is deferred. `Character.name` is an initial identity snapshot; during compatibility the original Player fields remain authoritative for the old API. Existing GameSave is still one-to-one with Player and cannot independently save multiple lives.
+
+## Phase 2C — Backend-only playthrough lifecycle — 2026-11-15
+
+| Decision | Rationale and limits |
+|---|---|
+| Add an atomic `apply_life_outcome` service for simulated playthrough changes | Exercises the already-approved Lifecycle relationships without exposing gameplay actions |
+| Resurrection retains the current active Playthrough | No new character or archived life is created; game state is not modified |
+| Regression archives the current Playthrough and creates a new active one with the same Character and Legacy | No inventory movement, knowledge grants, stat resets, or world reset yet |
+| New Life (same) reuses Character; New Life (successor) creates a distinct playable Character | Successor creation is only a backend placeholder for a future character-creation panel; any successor may be unrelated |
+| Historical playthroughs remain queryable as memories only | No API or UI for returning to historical worlds is added |
+| Existing `Player` and `GameSave` remain the gameplay/save authority | Transitions are **not wired to death gameplay**. Per-playthrough saves are a prerequisite before activating transitions in the game |
+| No schema changes in Phase 2C | The Phase 2A/2B models already represent the required relationships; no migration 0006 is needed |
+
+Regression inventory-at-death and mastery diminishing returns remain approved *future* rules, not Phase 2C behavior. This change does not implement death snapshots, NPC generations, era changes, character creation UI, nor lasting memory mechanics. Playthrough transitions are only safely callable in isolated backend scenarios at this stage.
