@@ -23,14 +23,19 @@ def _inventory(life):
     items = [dict(id=item.pk, token=str(item.client_token) if item.client_token else None,
                   definition_key=item.definition_key, kind=item.kind,
                   quantity=item.quantity, properties=copy.deepcopy(item.properties),
-                  location=item.location, slot=item.slot)
-             for item in life.inventory_items.exclude(location="destroyed").order_by("pk")]
+                  location=item.location, slot=item.slot,
+                  equipment_definition=(dict(id=item.equipment_definition_id, key=item.equipment_definition.key,
+                      positions=sorted(row.position for row in item.equipment_definition.required_positions.all()))
+                      if item.equipment_definition_id else None))
+             for item in life.inventory_items.exclude(location="destroyed").select_related("equipment_definition")
+             .prefetch_related("equipment_definition__required_positions").order_by("pk")]
+    equipped = list(life.equipped_positions.order_by("position").values("item_id", "position"))
     saved = PlaythroughSave.objects.filter(playthrough=life).first()
     # Include save changes so a command cannot race a compatibility save caller.
-    state = dict(playthrough_id=life.pk, items=items,
+    state = dict(playthrough_id=life.pk, items=items, equipped_positions=equipped,
                  saved_at=saved.updated_at.isoformat() if saved else None)
     revision = hashlib.sha256(json.dumps(state, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
-    return dict(playthrough_id=life.pk, revision=revision, items=items)
+    return dict(playthrough_id=life.pk, revision=revision, items=items, equipped_positions=equipped)
 
 
 @transaction.atomic
@@ -57,7 +62,7 @@ def move_inventory_item(*, player_id, playthrough_id, revision, item_id, locatio
     item = InventoryItem.objects.select_for_update().filter(pk=item_id, playthrough=life).exclude(location="destroyed").first()
     if item is None:
         raise ValidationError("Item is not in this active inventory.")
-    if item.location == InventoryItem.Location.EQUIPPED or location not in (
+    if item.location == InventoryItem.Location.EQUIPPED or item.equipped_positions.exists() or location not in (
             InventoryItem.Location.CARRIED, InventoryItem.Location.STORED):
         raise ValidationError("Equip and unequip commands are not available yet.")
     if location == InventoryItem.Location.CARRIED:

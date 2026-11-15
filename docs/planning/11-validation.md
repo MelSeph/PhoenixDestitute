@@ -100,3 +100,11 @@ Do not convert a partial check into a passed check without doing the work.
 - `check`: no issues. `makemigrations --check --dry-run`: no changes detected.
 - Created SQLite backup `django/db.phase2h-settings-backup.sqlite3`, then applied `0010_player_game_settings` successfully. `showmigrations game` confirms 0001–0010 applied. No settings backfill or save conversion.
 - The API persists the opt-in preference only; no scoring engine, automatic swap execution, or frontend controls are implemented. No commit or push. Details: [15-game-settings.md](15-game-settings.md).
+
+## Phase 2I — local validation — 2026-11-15
+
+- Full suite: **136 tests passed, none skipped** (113 previous + 23 equipment definition/placement tests), including existing headless Chromium checks.
+- `python manage.py check`: no issues. `python manage.py makemigrations --check --dry-run`: no changes detected.
+- Created SQLite backup `django/db.phase2i-backup.sqlite3` before successfully applying `0011_equipment_definitions_positions`. `showmigrations game` confirms 0001–0011 applied. No automatic catalog creation, legacy adoption, or inventory/save conversion.
+- Tests cover all agreed garment layers, multi-position and two-handed equipment, atomic manual swaps/unequips, identity/properties, ownership/staleness, uniqueness, destruction cleanup, save rollback/protection, and Regression history.
+- Placement services are backend-only and do not calculate stats or score upgrades. No new public equip endpoints, frontend changes, or edits to `legacy_game/`. No commit or push. Details: [16-equipment-placement.md](16-equipment-placement.md).

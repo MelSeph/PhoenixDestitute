@@ -4,7 +4,7 @@ import uuid
 
 from django.core.exceptions import ValidationError
 
-from .models import InventoryItem
+from .models import EquipmentDefinition, InventoryItem
 
 
 def invalid(message):
@@ -78,6 +78,14 @@ def reconcile(life, incoming, previous, legacy_updated_at=None):
             invalid("Only carried items may occupy inventory slots.")
         if item.pk and (item.definition_key != key or item.kind != kind):
             invalid("An existing identity cannot change item definition or kind.")
+        if not item.pk and EquipmentDefinition.objects.filter(key=key).exists():
+            invalid("Backend-defined equipment cannot be created by a browser save.")
+        if item.pk and item.equipment_definition_id is not None:
+            if (location != item.location or slot != item.slot or properties != item.properties):
+                invalid("Backend-defined equipment changes require a backend operation.")
+        if (location == "equipped" and (not item.pk or item.location != "equipped")
+                and life.inventory_items.filter(equipment_definition__isnull=False).exists()):
+            invalid("Use the backend equipment service to change equipped positions.")
         if kind == InventoryItem.Kind.EQUIPMENT:
             if properties.get("durability") == 0:
                 invalid("Zero-durability equipment cannot be saved as usable.")
@@ -91,6 +99,8 @@ def reconcile(life, incoming, previous, legacy_updated_at=None):
         item.location, item.slot, item.properties = location, slot, copy.deepcopy(properties)
         pending.append(item)
     removed = [item for token, item in current.items() if token not in tokens]
+    if any(item.equipment_definition_id is not None or item.equipped_positions.exists() for item in removed):
+        invalid("Backend-defined equipment cannot be removed by a browser save.")
     if previous is None and removed:
         invalid("This life already has transferred inventory. It must be restored before saving.")
     if any(item.death_entries.exists() for item in removed):

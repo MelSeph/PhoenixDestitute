@@ -51,7 +51,7 @@ Both segments meet at 75% effectiveness at half durability. Full durability give
 - Which attributes use the agreed degradation curve, and which actions/environmental conditions cause wear.
 - Repair mechanics, including materials, cost, access, amount restored, numerical mastery/stat requirements, penalty/improvement amounts or probabilities, gear-level influence, and the agreed quality ceiling's formula and item-specific limits.
 - Equipment eligibility, layering beyond the agreed torso/leg arrangements and hosiery/footwear distinction, accessories, and changes to current resources when equipment changes maximum stats.
-- Recipes, equipment definitions/positions, warmth/cooling scales, and the complete equip/unequip/stat lifecycle still need implementation after the remaining design decisions.
+- Recipes, warmth/cooling scales, and the complete public equip/stat lifecycle still need implementation after the remaining design decisions. Phase 2I now supplies definitions for agreed positions and internal manual placement; see [16-equipment-placement.md](16-equipment-placement.md).
 
 ## Implemented durability increment — 2026-11-15
 

@@ -175,6 +175,36 @@ class Playthrough(models.Model):
         return f"Playthrough {self.pk} ({self.transition_type})"
 
 
+class EquipmentPosition(models.TextChoices):
+    UPPER_UNDERGARMENT = "upper_undergarment", "Upper undergarment"
+    UPPER_CLOTHING = "upper_clothing", "Upper clothing"
+    TORSO_ARMOR = "torso_armor", "Torso armor"
+    LOWER_UNDERGARMENT = "lower_undergarment", "Lower undergarment"
+    LOWER_CLOTHING = "lower_clothing", "Lower clothing"
+    LEG_ARMOR = "leg_armor", "Leg armor"
+    HOSIERY = "hosiery", "Hosiery"
+    FOOTWEAR = "footwear", "Footwear"
+    MAIN_HAND = "main_hand", "Main hand"
+    OFF_HAND = "off_hand", "Off hand"
+
+
+class EquipmentDefinition(models.Model):
+    """Shared position requirements; owned instances keep separate properties."""
+
+    key = models.CharField(max_length=100, unique=True)
+
+
+class EquipmentDefinitionPosition(models.Model):
+    definition = models.ForeignKey(EquipmentDefinition, on_delete=models.CASCADE, related_name="required_positions")
+    position = models.CharField(max_length=24, choices=EquipmentPosition.choices)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["definition", "position"], name="unique_definition_position"),
+            models.CheckConstraint(condition=models.Q(position__in=EquipmentPosition.values), name="valid_definition_position"),
+        ]
+
+
 class InventoryItem(models.Model):
     """One persistent item instance or homogeneous stack in one life.
 
@@ -197,6 +227,9 @@ class InventoryItem(models.Model):
         Playthrough, on_delete=models.PROTECT, related_name="inventory_items"
     )
     definition_key = models.CharField(max_length=100)
+    # Explicit adoption only: do not infer legacy equipment positions from names.
+    equipment_definition = models.ForeignKey(
+        EquipmentDefinition, on_delete=models.PROTECT, null=True, blank=True, related_name="instances")
     # Browser-generated retry identity; NULL leaves backend-only rows unmanaged.
     client_token = models.UUIDField(null=True, blank=True, unique=True)
     kind = models.CharField(max_length=16, choices=Kind.choices)
@@ -228,6 +261,9 @@ class InventoryItem(models.Model):
         from django.core.exceptions import ValidationError
         super().clean()
         errors = {}
+        if self.equipment_definition_id is not None:
+            if self.kind != self.Kind.EQUIPMENT or self.definition_key != self.equipment_definition.key:
+                errors["equipment_definition"] = "Equipment definition must match the equipment instance key."
         if self.kind == self.Kind.EQUIPMENT and self.quantity != 1:
             errors["quantity"] = "Equipment must be a single item instance."
         if self.location == self.Location.CARRIED and self.slot is None:
@@ -238,6 +274,32 @@ class InventoryItem(models.Model):
             errors["playthrough"] = "New inventory must belong to an active life."
         if errors:
             raise ValidationError(errors)
+
+
+class EquippedPosition(models.Model):
+    """One occupied position, with multiple rows for a multi-position instance."""
+
+    playthrough = models.ForeignKey(Playthrough, on_delete=models.PROTECT, related_name="equipped_positions")
+    item = models.ForeignKey(InventoryItem, on_delete=models.PROTECT, related_name="equipped_positions")
+    position = models.CharField(max_length=24, choices=EquipmentPosition.choices)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["playthrough", "position"], name="unique_equipped_position_per_life"),
+            models.UniqueConstraint(fields=["item", "position"], name="unique_position_per_item"),
+            models.CheckConstraint(condition=models.Q(position__in=EquipmentPosition.values), name="valid_equipped_position"),
+        ]
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        super().clean()
+        if self.item_id is not None:
+            item = self.item
+            if (item.playthrough_id != self.playthrough_id or item.kind != InventoryItem.Kind.EQUIPMENT or item.quantity != 1
+                    or item.location != InventoryItem.Location.EQUIPPED or item.equipment_definition_id is None):
+                raise ValidationError("Position must reference defined equipment equipped in this life.")
+            if not item.equipment_definition.required_positions.filter(position=self.position).exists():
+                raise ValidationError({"position": "Position is not required by this equipment definition."})
 
 
 class DeathSnapshot(models.Model):

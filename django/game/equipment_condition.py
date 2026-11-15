@@ -65,6 +65,7 @@ def apply_equipment_wear(*, player_id, item_id, amount):
     item.properties = copy.deepcopy(item.properties)
     item.properties["durability"] = max(0, current - amount)
     if item.properties["durability"] == 0:
+        item.equipped_positions.all().delete()
         item.location, item.slot = InventoryItem.Location.DESTROYED, None
     item.save(update_fields=["properties", "location", "slot"])
     _refresh_inventory_save(player, life)
