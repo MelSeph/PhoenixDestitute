@@ -1,7 +1,19 @@
 import { test, expect } from '@playwright/test';
 
-async function start(page) {
+async function start(page, { mobile = false } = {}) {
   await page.goto('/');
+  if (mobile) {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.getByText('Options', { exact: true }).click();
+    await page.getByLabel('Text Size', { exact: true }).selectOption('200');
+  }
+  await page.getByRole('button', { name: 'Create new account', exact: true }).click();
+  await page.getByLabel('Username', { exact: true }).fill(`identity-${Date.now()}`);
+  await page.getByLabel('Password', { exact: true }).fill('A-Secure-Player-Password-938!');
+  await page.getByLabel('Confirm password', { exact: true }).fill('A-Secure-Player-Password-938!');
+  await page.getByRole('button', { name: 'Create account', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Choose a character', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Create a character', exact: true }).click();
   const response = page.waitForResponse(response => response.url().endsWith('/api/creation/stats/') && response.request().method() === 'POST');
   await page.getByRole('button', { name: 'Roll starting attributes', exact: true }).click();
   return (await (await response).json()).draft;
@@ -54,6 +66,7 @@ test('saved identity survives rolls and refresh; review is read-only and confirm
   await page.getByRole('button', { name: 'Reroll unlocked attributes', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Reroll unlocked attributes', exact: true })).toBeEnabled();
   await page.reload();
+  await page.getByRole('button', { name: 'Create a character', exact: true }).click();
   await expect(page.getByLabel('Name', { exact: true })).toHaveValue('Ash');
   await expect(page.getByRole('group', { name: 'Hair length', exact: true }).getByRole('radio', { name: 'Long', exact: true })).toBeChecked();
   await page.getByRole('button', { name: 'Review birth', exact: true }).click();
@@ -129,10 +142,7 @@ test('lost confirmation response recovers the confirmed birth without another PO
 });
 
 test('visual identity choices and review fit mobile at 200% text with keyboard access', async ({ page }, testInfo) => {
-  await start(page);
-  await page.setViewportSize({ width: 375, height: 812 });
-  await page.getByText('Options', { exact: true }).click();
-  await page.getByLabel('Text Size', { exact: true }).selectOption('200');
+  await start(page, { mobile: true });
   await fill(page, { bald: true });
   await save(page);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -145,7 +155,7 @@ test('visual identity choices and review fit mobile at 200% text with keyboard a
   await expect(page.getByRole('button', { name: 'Back to choices', exact: true })).toBeFocused();
 });
 
-test('an older character keeps its session and save when the new birth is blocked', async ({ page }) => {
+test('an older character is retained while another character is created', async ({ page }) => {
   await page.request.get('/prototype/');
   const token = (await page.context().cookies()).find(cookie => cookie.name === 'csrftoken').value;
   const original = await page.request.post('/api/player/create/', { headers: { 'X-CSRFToken': token } });
@@ -153,9 +163,11 @@ test('an older character keeps its session and save when the new birth is blocke
   await start(page); await fill(page, { bald: true });
   await page.getByRole('button', { name: 'Save identity and looks', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Save identity and looks', exact: true })).toBeDisabled();
-  await expect(page.getByRole('button', { name: 'Review birth', exact: true })).toBeDisabled();
-  await expect(page.getByRole('note')).toContainText('already has a character');
-  const current = (await (await page.request.get('/api/creation/stats/')).json()).draft;
-  expect((await page.request.post('/api/creation/stats/confirm/', { data: { revision: current.revision }, headers: { 'X-CSRFToken': token } })).status()).toBe(409);
-  expect((await (await page.request.get('/api/player/')).json()).player).toEqual(originalPlayer);
+  await expect(page.getByRole('button', { name: 'Review birth', exact: true })).toBeEnabled();
+  await page.getByRole('button', { name: 'Review birth', exact: true }).click();
+  await page.getByRole('button', { name: 'Confirm birth', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'You wake up in your crib', exact: true })).toBeVisible();
+  const roster = (await (await page.request.get('/api/characters/')).json()).characters;
+  expect(roster.map(character => character.name).sort()).toEqual(['Adventurer', 'Ash']);
+  expect(roster.some(character => character.name === originalPlayer.name)).toBe(true);
 });

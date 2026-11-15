@@ -12,9 +12,28 @@ function draft(overrides = {}) {
 async function reply(route, value, status = 200) {
   await route.fulfill({ status, json: { success: true, draft: value } });
 }
-test.beforeEach(async ({ context }) => {
+test.beforeEach(async ({ context, page }) => {
   await context.addCookies([{ name: 'csrftoken', value: 'test-token', url: 'http://127.0.0.1:5173' }]);
+  let signedInAs = null;
+  await page.route('**/api/account/', route => route.fulfill({ json: { success: true, authenticated: Boolean(signedInAs), username: signedInAs } }));
+  await page.route('**/api/account/register/', async route => {
+    signedInAs = route.request().postDataJSON().username;
+    await route.fulfill({ json: { success: true, authenticated: true, username: signedInAs } });
+  });
+  await page.route('**/api/characters/', route => route.fulfill({ json: { success: true, characters: [], current: null } }));
+  await page.route('**/api/characters/new/', route => route.fulfill({ json: { success: true, characters: [], current: null } }));
 });
+
+async function signUpAndStart(page) {
+  await page.getByRole('button', { name: 'Create new account', exact: true }).click();
+  await page.getByLabel('Username', { exact: true }).fill(`birth-${Date.now()}`);
+  await page.getByLabel('Password', { exact: true }).fill('A-Secure-Player-Password-938!');
+  await page.getByLabel('Confirm password', { exact: true }).fill('A-Secure-Player-Password-938!');
+  await page.getByRole('button', { name: 'Create account', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Choose a character', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Create a character', exact: true }).click();
+}
+async function enterCreation(page) { await page.goto('/'); await signUpAndStart(page); }
 
 test('start is explicit, bootstraps CSRF, and displays only server stats/resources', async ({ page, context }, testInfo) => {
   await context.clearCookies();
@@ -28,6 +47,7 @@ test('start is explicit, bootstraps CSRF, and displays only server stats/resourc
     await reply(route, draft(), 201);
   });
   await page.goto('/');
+  await signUpAndStart(page);
   const start = page.getByRole('button', { name: 'Roll starting attributes', exact: true });
   await expect(start).toBeVisible();
   expect(writes).toEqual([]);
@@ -54,7 +74,7 @@ test('locks enforce three, unlock and switch, and send the complete server-owned
     current = { ...current, locked_stats: data.locked_stats, revision: `revision-${submissions.length + 1}` };
     await reply(route, current);
   });
-  await page.goto('/');
+  await enterCreation(page);
   for (const label of ['Strength', 'Intelligence', 'Endurance']) {
     await page.getByRole('checkbox', { name: `Lock ${label}`, exact: true }).click();
     await expect(page.getByRole('checkbox', { name: `Lock ${label}`, exact: true })).toBeChecked();
@@ -83,7 +103,7 @@ test('unlimited explicit rerolls use each revision and rapid clicks submit only 
     current = { ...current, revision: `rolled-${count}` };
     await reply(route, current);
   });
-  await page.goto('/');
+  await enterCreation(page);
   const reroll = page.getByRole('button', { name: 'Reroll unlocked attributes', exact: true });
   await expect(reroll).toBeEnabled();
   await reroll.evaluate(button => { button.click(); button.click(); });
@@ -96,6 +116,7 @@ test('unlimited explicit rerolls use each revision and rapid clicks submit only 
   expect(count).toBe(13);
   await expect(page.getByLabel('Strength value', { exact: true })).toHaveText('2');
   await page.reload();
+  await page.getByRole('button', { name: 'Create a character', exact: true }).click();
   await expect(reroll).toBeEnabled();
   expect(count).toBe(13);
 });
@@ -110,7 +131,7 @@ test('a stale revision reloads the latest draft without replaying the failed act
     current = draft({ revision: 'other-tab', locked_stats: ['luck'], stats: { ...current.stats, luck: 5 } });
     await route.fulfill({ status: 409, json: { error: 'The creation draft changed.' } });
   });
-  await page.goto('/');
+  await enterCreation(page);
   await page.getByRole('button', { name: 'Reroll unlocked attributes', exact: true }).click();
   await expect(page.getByText(/latest values are loaded/)).toBeVisible();
   await expect(page.getByLabel('Luck value', { exact: true })).toHaveText('5');
@@ -127,7 +148,7 @@ test('a lost response requires read recovery rather than repeating a possibly sa
     current = draft({ revision: 'saved-but-lost', stats: { ...current.stats, luck: 4 } });
     await route.abort('failed');
   });
-  await page.goto('/');
+  await enterCreation(page);
   const reroll = page.getByRole('button', { name: 'Reroll unlocked attributes', exact: true });
   await reroll.click();
   await expect(page.getByText(/Reload the draft before trying again/)).toBeVisible();
@@ -142,7 +163,7 @@ test('a lost response requires read recovery rather than repeating a possibly sa
 test('expired drafts return to explicit creation, while account rejection offers no creation action', async ({ page }) => {
   await page.route('**' + base, route => reply(route, draft()));
   await page.route('**' + base + 'reroll/', route => route.fulfill({ status: 404, json: { error: 'Missing' } }));
-  await page.goto('/');
+  await enterCreation(page);
   await page.getByRole('button', { name: 'Reroll unlocked attributes', exact: true }).click();
   await expect(page.getByText(/no longer available/)).toBeVisible();
   await expect(page.getByRole('button', { name: 'Roll starting attributes', exact: true })).toBeEnabled();
@@ -159,6 +180,7 @@ test('starting attributes fit a mobile viewport with 200% text', async ({ page }
   await page.goto('/');
   await page.getByText('Options', { exact: true }).click();
   await page.getByLabel('Text Size', { exact: true }).selectOption('200');
+  await signUpAndStart(page);
   await expect(page.getByRole('checkbox', { name: 'Lock Baseline Condition', exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: testInfo.outputPath('birth-mobile.png'), fullPage: true });

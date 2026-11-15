@@ -130,6 +130,9 @@ class BirthConfirmationTests(TestCase):
         self.assertEqual(str(record.playthrough.character_id), confirmed["birth"]["character_id"])
         self.assertEqual(self.client.session.session_key, key)
         self.assertEqual(self.client.session["active_player_id"], confirmed["birth"]["player_id"])
+        roster = self.client.get(reverse("api-characters")).json()
+        self.assertEqual(roster["current"]["kind"], "birth")
+        self.assertEqual(roster["current"]["draft"]["birth"]["player_id"], confirmed["birth"]["player_id"])
         self.assertEqual(self.client.get(reverse("api-player-detail")).json()["player"]["name"], "Phoenix")
         for model in [Player, Legacy, Character, Playthrough, BirthRecord]:
             self.assertEqual(model.objects.count(), 1)

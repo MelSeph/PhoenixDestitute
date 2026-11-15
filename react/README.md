@@ -80,7 +80,7 @@ In Django admin, open **Players**, select exactly one unrostered player, choose 
 
 ### Player accounts
 
-Use **Player account** above the character list to create a username/password account or sign in. Registration/sign-in moves characters and an unfinished creation draft owned by that browser to the account before Django rotates its session key. Other signed-in browsers can then see the same account roster, load a character, and continue its server-side saves. Each browser's active character selection remains independent. Sign out keeps account-owned characters and drafts on the account. Password reset/email verification are not configured yet.
+The landing screen contains account sign-in/registration and the **Options** menu. After sign-in, choose an account character or start a new creation. Loading a saved character or confirming a new birth opens the game screen. Confirmed newborns begin at **You wake up in your crib**; older characters return to their saved story view. **Choose another character** returns to the account roster. Registration/sign-in moves characters and an unfinished creation draft owned by that browser to the account before Django rotates its session key. Other signed-in browsers can then see the same account roster, load a character, and continue its server-side saves. Each browser's active character selection remains independent. Sign out keeps account-owned characters and drafts on the account. Password reset/email verification are not configured yet.
 
 ## Verify
 
@@ -94,6 +94,6 @@ Browser tests use installed Microsoft Edge by default. For another environment, 
 
 Browser tests require ports 8000 and 5173 to be free. They start Django using `tests/django_server.py` with a freshly migrated temporary database, plus Vite. They do not use or modify `django/db.sqlite3`. Live integration checks cover birth drafts/identity/visuals, locks/rerolls/resources, final review/confirmation, retries/lost responses, real CSRF/session behavior, and protection of older characters. Other scenarios mock API responses. Servers stop at the end of the test run. Screenshots and failure artifacts go in ignored `test-results/`.
 
-Verified: 6 settings tests, 32 browser tests, production build, and all 322 Django tests. Node 24.22.3, React 19.3.1, Vite 7.3.8; exact dependencies are locked in `package-lock.json`.
+Verified: 6 settings tests, 34 browser tests, production build, and all 322 Django tests. Node 24.22.3, React 19.3.1, Vite 7.3.8; exact dependencies are locked in `package-lock.json`.
 
 `npm run build` outputs ignored `dist/` files. `npm run preview` serves a static build for inspection; it does not include the development proxy. Production hosting must serve the React build and forward `/api/` and `/prototype/` to Django on the same origin. Deployment is not configured in this port.

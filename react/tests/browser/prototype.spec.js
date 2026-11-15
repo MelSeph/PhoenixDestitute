@@ -5,6 +5,15 @@ test.beforeEach(async ({ page }) => {
   await page.goto('/');
 });
 async function options(page) { await page.getByText('Options', { exact: true }).click(); }
+async function registerAndStart(page) {
+  await page.getByRole('button', { name: 'Create new account', exact: true }).click();
+  await page.getByLabel('Username', { exact: true }).fill(`prototype-${Date.now()}`);
+  await page.getByLabel('Password', { exact: true }).fill('A-Secure-Player-Password-938!');
+  await page.getByLabel('Confirm password', { exact: true }).fill('A-Secure-Player-Password-938!');
+  await page.getByRole('button', { name: 'Create account', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Choose a character', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Create a character', exact: true }).click();
+}
 
 test('prototype layout, readability persistence, and independent resets', async ({ page }, testInfo) => {
   await expect(page.getByRole('heading', { name: 'PhoenixDestitute', exact: true })).toBeVisible();
@@ -79,6 +88,7 @@ test('mobile layout fits at 200% text and modal traps keyboard focus', async ({ 
 });
 test('backend errors are visible and do not fabricate a birth draft', async ({ page }) => {
   await page.route('**/api/creation/stats/', route => route.fulfill({ status: 503, body: 'Unavailable' }));
+  await registerAndStart(page);
   await page.getByRole('button', { name: 'Reload draft' }).click();
   await expect(page.getByText('Could not load your birth draft: HTTP 503')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Roll starting attributes', exact: true })).not.toBeVisible();

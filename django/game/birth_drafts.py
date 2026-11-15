@@ -174,6 +174,7 @@ def confirm_birth(*, session_key, revision, account_id=None):
     # Persist activation in the same transaction as the birth. A lost response or
     # middleware/session-save failure must not leave an orphaned duplicate birth.
     data["active_player_id"] = str(player.pk)
+    data["character_screen"] = "loaded"
     session.session_data = SessionStore().encode(data)
     session.save(update_fields=["session_data"])
     return _payload(draft, session), True

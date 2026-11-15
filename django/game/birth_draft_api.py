@@ -107,4 +107,5 @@ def birth_confirm(request):
         return JsonResponse({"error": " ".join(exc.messages)}, status=409)
     # Keep this request's session cache consistent with the transactional write.
     request.session["active_player_id"] = draft["birth"]["player_id"]
+    request.session["character_screen"] = "loaded"
     return JsonResponse({"success": True, "draft": draft}, status=201 if created else 200)

@@ -14,6 +14,8 @@
 
 **Player accounts and reset:** The user approved username/password accounts with current-session ownership transfer and admin-code recovery, plus erasing local game/story data while keeping the Django superuser and shared catalogs. See [32-player-accounts-and-game-data-reset.md](32-player-accounts-and-game-data-reset.md). Migrations 0020–0021 add account ownership and enforce one owner per row. The local data reset and post-reset verification are part of this work. No commit/push requested.
 
+**Account-first game opening:** The user requested an account/options landing screen, character selection and creation after sign-in, then game entry after loading or confirming a character. Newborns wake in their crib. See [33-account-first-game-opening.md](33-account-first-game-opening.md). No migration or legacy-game edits.
+
 The equipment-adaptation preference is now persisted through a session-scoped API, defaulting to player-controlled timing: [15-game-settings.md](15-game-settings.md). Migration 0010 is applied locally and the full suite has 113 passing tests. Automatic adaptation/scoring remains unimplemented; the preference alone does not change gear.
 
 ## Read next

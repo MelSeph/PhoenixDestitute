@@ -1,9 +1,20 @@
 import { test, expect } from '@playwright/test';
 
+async function enterCreation(page) {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Create new account', exact: true }).click();
+  await page.getByLabel('Username', { exact: true }).fill(`django-${Date.now()}`);
+  await page.getByLabel('Password', { exact: true }).fill('A-Secure-Player-Password-938!');
+  await page.getByLabel('Confirm password', { exact: true }).fill('A-Secure-Player-Password-938!');
+  await page.getByRole('button', { name: 'Create account', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Choose a character', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Create a character', exact: true }).click();
+}
+
 test('real birth draft, locks, resource previews, and rerolls persist through Django sessions', async ({ page }) => {
   const playerCalls = [];
   page.on('request', request => { if (request.url().includes('/api/player/')) playerCalls.push(request.url()); });
-  await page.goto('/');
+  await enterCreation(page);
   await expect(page.getByRole('button', { name: 'Roll starting attributes', exact: true })).toBeVisible();
   expect((await page.request.get('/api/creation/stats/')).status()).toBe(404);
   const creation = page.waitForResponse(response => response.url().endsWith('/api/creation/stats/') && response.request().method() === 'POST');
@@ -29,6 +40,7 @@ test('real birth draft, locks, resource previews, and rerolls persist through Dj
   expect(rolled.revision).not.toBe(initial.revision);
   for (const key of ['strength', 'intelligence', 'endurance']) expect(rolled.stats[key]).toBe(initial.stats[key]);
   await page.reload();
+  await page.getByRole('button', { name: 'Create a character', exact: true }).click();
   await expect(page.getByRole('checkbox', { name: 'Lock Strength', exact: true })).toBeChecked();
   expect((await (await page.request.get('/api/creation/stats/')).json()).draft).toEqual(rolled);
   expect(playerCalls).toEqual([]);
@@ -40,9 +52,9 @@ test('existing character sessions can prepare a birth draft without changing the
   const token = (await page.context().cookies()).find(cookie => cookie.name === 'csrftoken').value;
   const created = await page.request.post('/api/player/create/', { headers: { 'X-CSRFToken': token } });
   const original = (await created.json()).player;
-  await page.goto('/');
+  await enterCreation(page);
   await page.getByRole('button', { name: 'Roll starting attributes', exact: true }).click();
   await expect(page.getByRole('checkbox', { name: 'Lock Strength', exact: true })).toBeVisible();
-  expect((await (await page.request.get('/api/player/')).json()).player).toEqual(original);
+  expect((await (await page.request.get('/api/characters/')).json()).characters.map(entry => entry.name)).toContain(original.name);
   await expect(page.getByRole('button', { name: 'Create local character', exact: true })).not.toBeVisible();
 });

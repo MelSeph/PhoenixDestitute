@@ -201,3 +201,11 @@ All 254 Django tests pass, none skipped. The updated UI passes 6 settings tests 
 - The user-approved reset removed all game/story records and game-related admin logs, cleared active game selections in sessions, and reset numeric game table sequences. The existing Django superuser and shared catalog tables were preserved. All game-model counts are zero; SQLite integrity and foreign-key checks pass. No recovery copy of the cleared current saves was retained.
 - On a post-reset rerun, 320 of 321 Django tests passed; the browser-backed inventory adapter test failed before assertions because local Chromium/Edge could not initialize its GPU/cache process. The same test had passed in the earlier complete run. `manage.py check` and `makemigrations --check --dry-run` pass. Isolated rerun reproduced the browser process failure.
 - No changes to `legacy_game/`; commit/push not requested. See [32-player-accounts-and-game-data-reset.md](32-player-accounts-and-game-data-reset.md).
+
+## Account-first game opening — 2026-11-15
+
+- **322 Django tests pass**, including roster state after birth confirmation. All **33 browser tests** and **6 settings tests** pass; React production build succeeds.
+- Browser coverage verifies the landing screen, sign-in retry, Options visibility, signed-in character selection/creation, crib entry on confirmed birth, game entry on load, and account access after a browser restart/sign-in.
+- Django system check and `makemigrations --check --dry-run` pass. No data reset or legacy-game edit.
+- A later full Django rerun reproduced one environment-only failure in the pre-existing Edge-backed inventory JavaScript test (Chromium GPU/cache process crash); the account/birth-focused 30-test rerun passed.
+- See [33-account-first-game-opening.md](33-account-first-game-opening.md).

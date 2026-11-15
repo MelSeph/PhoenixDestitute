@@ -28,6 +28,8 @@ export default function App() {
   const [pendingImport, setPendingImport] = useState(null);
   const [undo, setUndo] = useState(null);
   const [summaryOpen, setSummaryOpen] = useState(initialSummaryOpen);
+  const [signedIn, setSignedIn] = useState(null);
+  const reportAccountState = React.useCallback(account => setSignedIn(Boolean(account?.authenticated)), []);
   useEffect(() => { applyAppearance(settings, document.documentElement); }, [settings]);
 
   function update(next, success, requireStorage = false) {
@@ -72,8 +74,8 @@ export default function App() {
 
   return <main className="prototype-container">
     <section className="panel"><h1>PhoenixDestitute</h1><p>Your journey begins with possibility.</p></section>
-    <CharacterManager />
-    <details className="options-menu">
+    <CharacterManager onAccountStateChange={reportAccountState} />
+    {signedIn === false && <details className="options-menu">
       <summary className="options-toggle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="m9 3-1 3-3 1-2 4 2 2 1 4 3 1 2 3 4-1 1-3 3-1 2-4-2-2-1-4-3-1-2-3Z" /><circle cx="12" cy="12" r="3" /></svg>Options</summary>
       <section className="panel appearance-settings" aria-labelledby="appearance-heading">
         <h2 id="appearance-heading">Appearance Settings</h2>
@@ -126,7 +128,7 @@ export default function App() {
         </section>
         <p className="status" role="status" aria-live="polite">{message}</p>
       </section>
-    </details>
+    </details>}
     {picker && <ColorPicker colorKey={picker} colors={settings.customColors} onClose={() => setPicker(null)} onApply={colors => { update({ ...settings, customColors: colors }, 'Custom color applied.'); setPicker(null); }} />}
     {pendingImport && <Dialog title="Review Appearance Backup" onClose={() => setPendingImport(null)}>
       <p>{comparison.filter(([, before, after]) => before !== after).length} of 15 settings will change. Nothing changes until you confirm.</p>
