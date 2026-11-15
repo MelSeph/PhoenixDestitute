@@ -157,3 +157,7 @@ Do not convert a partial check into a passed check without doing the work.
 - Created backup `django/db.phase2o-backup.sqlite3`, then successfully applied `0016_birth_stat_drafts`. `showmigrations game` confirms 0001–0016 applied. No existing character/save backfill or conversion.
 - Tests cover server draw calls/bounds, derived previews, unlimited rerolls, up to three freely changeable locks, revision/retry protection, transaction rollback, session ownership/expiry/cleanup, constraints, CSRF/account/method/body validation, and unchanged existing actors/saves.
 - The API handles unconfirmed stat drafts only. No final birth, name/gender/appearance, current-Condition/training mechanics, frontend, or `legacy_game/` changes. No commit or push. Details: [23-birth-stat-drafts.md](23-birth-stat-drafts.md).
+
+## React prototype port — 2026-11-15
+
+The authorized React port adds no Django/backend changes. All 254 existing Django tests pass, none skipped. The new app passes 6 settings tests, 7 Edge browser checks, and its Vite production build. A live Django integration check verifies CSRF and session persistence through the Vite proxy using a temporary database. Desktop/mobile layouts and keyboard dialogs are covered; desktop screenshot visually inspected. See [24-react-prototype-port.md](24-react-prototype-port.md) and [react/README.md](../../react/README.md). No commit, push, or deployment performed.

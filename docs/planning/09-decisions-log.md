@@ -285,3 +285,9 @@ The user approved the reviewed Phase 2O scope with “yes”: session-owned pers
 Migration 0016 creates only the draft table, with no existing-actor/save conversion. Drafts are not permanent Characters and no birth-confirmation endpoint exists yet; final identity/gender/appearance and copying/freeze of selected stats remain future work. Existing sessions with legacy Players are preserved unchanged. Details: [23-birth-stat-drafts.md](23-birth-stat-drafts.md). Commit/push require separate approval.
 
 The user authorized publication of the completed Phase 2O changes with “commit and push to github”. Validation before publication: all 254 tests passed; Django checks and migration drift checks passed.
+
+## React prototype port authorization — 2026-11-15
+
+The user explicitly requested recreating the Django prototype UI in React under `react/`. This supersedes the earlier frontend deferral for this scoped port. Preserve the existing design and appearance behavior, leave the Django prototype/backend and `legacy_game/` intact, and use the existing Character API. Use the active JavaScript palette where the prototype stylesheet's initial tokens differ. Preserve appearance backup version 1 and storage keys; transfer across origins by backup rather than implying shared localStorage. Newborn confirmation/stat-draft UI and other gameplay screens are separate integrations. Implementation and verification: [24-react-prototype-port.md](24-react-prototype-port.md). No commit/push or deployment authorization is inferred.
+
+The user subsequently authorized committing and pushing the completed React port with “commit and push to github”. Pre-publication verification: 6 settings tests, 7 browser tests, the production build, and all 254 Django tests passed. Hosting deployment remains outside scope.
