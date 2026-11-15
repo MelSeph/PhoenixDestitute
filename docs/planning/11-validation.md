@@ -40,3 +40,12 @@ Do not convert a partial check into a passed check without doing the work.
 - In the user's local Django environment run `python manage.py check`, `python manage.py makemigrations --check --dry-run`, and `python manage.py test game`.
 - No death endpoint, game frontend transition, equipment transfer, character stat reset, or per-playthrough save migration is implemented.
 - **Runtime verification is pending** until the local Django test output is received. The earlier baseline was 16 passing tests; this phase adds 11 tests (expect 27).
+
+
+## Phase 2D validation — 2026-11-15
+
+- Additive migration `0006_playthroughsave` creates life-scoped save rows and copies each existing `GameSave` JSON into the corresponding **initial** life, without deleting or modifying legacy rows. Back up `django/db.sqlite3` before applying.
+- Service tests cover current-life saves, compatibility mirroring, repeated updates, empty new life, non-overwriting historical saves, resurrection continuity, cross-Legacy access denial, invalid payloads, and unprovisioned players.
+- Source inspection found no deployed save/load API routes in `django/phoenixdestitute/urls.py`; no frontend or public save API is changed here.
+- This packaged copy has syntax and ZIP checks only. **Django runtime check, migration, and tests must run on the user's installed environment**; expected test discovery 37 (27 previous + 10 new).
+- Run from `PhoenixDestitute/django`: `python manage.py check`, `python manage.py makemigrations --check --dry-run`, `python manage.py migrate`, `python manage.py test game`, `python manage.py showmigrations game`.

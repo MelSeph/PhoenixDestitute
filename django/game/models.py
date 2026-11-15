@@ -54,6 +54,19 @@ class GameSave(models.Model):
         return f"Save for {self.player.name}"
 
 
+class PlaythroughSave(models.Model):
+    """Independent JSON save for one life; historical saves are retained."""
+
+    playthrough = models.OneToOneField(
+        "Playthrough", on_delete=models.PROTECT, related_name="saved_game"
+    )
+    data = models.JSONField(default=dict)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Save for playthrough {self.playthrough_id}"
+
+
 class Legacy(models.Model):
     """A continuing story connecting several lives and characters."""
 

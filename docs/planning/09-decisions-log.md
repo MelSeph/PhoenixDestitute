@@ -53,3 +53,17 @@
 | No schema changes in Phase 2C | The Phase 2A/2B models already represent the required relationships; no migration 0006 is needed |
 
 Regression inventory-at-death and mastery diminishing returns remain approved *future* rules, not Phase 2C behavior. This change does not implement death snapshots, NPC generations, era changes, character creation UI, nor lasting memory mechanics. Playthrough transitions are only safely callable in isolated backend scenarios at this stage.
+
+
+## Phase 2D — Playthrough-aware backend saves — 2026-11-15
+
+| Decision | Reason and boundary |
+|---|---|
+| Add a one-to-one `PlaythroughSave` record containing JSON and updated timestamp for each life | Current `GameSave` permits only one row per Player; distinct lives need distinct snapshots |
+| Preserve existing `GameSave` and populate initial-life saves by migration `0006` | Existing player saves must not be deleted or overwritten; historical records kept |
+| Copy legacy save to the **initial** playthrough, not arbitrarily to a later active life | Legacy GameSave has no reliable life identifier; prevent silently attributing old data to a new era |
+| Add a backend-only active-life save/load service and historical read service | Scoped writes cannot overwrite archived saves; a newly transitioned life starts without a save |
+| Mirror new active save writes to `GameSave` transactionally for backward compatibility | Old callers can continue reading the latest saved JSON after an explicit service save; mirror is not a substitute for life-aware reads |
+| Do not connect existing frontend/API or lifecycle transition code | Legacy JS references older `/api/players/<id>/save/` and `/load/` endpoints that are **not** present in current Django URL routes. Phase 2D is a storage foundation, not a production-ready death/save UI |
+
+**Known limitation:** Existing code that reads `GameSave` directly can still see a predecessor's data immediately after a backend-only simulated life transition and before the new life is saved. New code must use `load_active_playthrough` (which returns `None` for an unsaved life); UI/API cutover and stat/inventory reset are future milestones. The new schema enforces one save per playthrough; read-only historical policy is enforced by the service, not by database-level prohibitions on direct model writes. No account authorization or save/load endpoints are introduced.
