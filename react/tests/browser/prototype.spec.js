@@ -4,7 +4,7 @@ test.beforeEach(async ({ page }) => {
   await page.route('**/api/creation/stats/', route => route.fulfill({ status: 404, json: { error: 'No birth stat draft in this session.' } }));
   await page.goto('/');
 });
-async function options(page) { await page.getByText('Options', { exact: true }).click(); }
+async function options(page) { await page.locator('.options-toggle').click(); }
 async function registerAndStart(page) {
   await page.getByRole('button', { name: 'Create new account', exact: true }).click();
   await page.getByLabel('Username', { exact: true }).fill(`prototype-${Date.now()}`);

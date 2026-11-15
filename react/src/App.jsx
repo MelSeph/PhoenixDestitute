@@ -28,8 +28,6 @@ export default function App() {
   const [pendingImport, setPendingImport] = useState(null);
   const [undo, setUndo] = useState(null);
   const [summaryOpen, setSummaryOpen] = useState(initialSummaryOpen);
-  const [signedIn, setSignedIn] = useState(null);
-  const reportAccountState = React.useCallback(account => setSignedIn(Boolean(account?.authenticated)), []);
   useEffect(() => { applyAppearance(settings, document.documentElement); }, [settings]);
 
   function update(next, success, requireStorage = false) {
@@ -71,64 +69,64 @@ export default function App() {
     ...Object.entries(colorLabels).map(([key, label]) => [label, settings.customColors[key], pendingImport.customColors[key]]),
     ...Object.entries(readabilityOptions).map(([key, setting]) => [setting.label, settings.readability[key], pendingImport.readability[key]]),
   ] : [];
+  const optionsMenu = <details className="options-menu">
+    <summary role="button" className="options-toggle icon-button" aria-label="Options" title="Options"><span className="visually-hidden">Options</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="m9 3-1 3-3 1-2 4 2 2 1 4 3 1 2 3 4-1 1-3 3-1 2-4-2-2-1-4-3-1-2-3Z" /><circle cx="12" cy="12" r="3" /></svg></summary>
+    <section className="panel appearance-settings" aria-labelledby="appearance-heading">
+      <h2 id="appearance-heading">Appearance Settings</h2>
+      <label htmlFor="theme">Color Theme</label>
+      <select id="theme" value={settings.theme} onChange={event => update({ ...settings, theme: event.target.value }, 'Color theme updated.')}>
+        {Object.entries(themeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+      </select>
+      <div className="settings-grid">{Object.entries(readabilityOptions).map(([key, setting]) => <div key={key}>
+        <label htmlFor={key}>{setting.label}</label>
+        <select id={key} value={settings.readability[key]} onChange={event => update({ ...settings, readability: { ...settings.readability, [key]: event.target.value } }, `${setting.label} updated.`)}>
+          {setting.options.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+        </select>
+      </div>)}</div>
+      <p className="help">Text size, fonts, and spacing are independent of your color theme. These preferences are stored in this browser.</p>
+      <div className="game-prose" aria-label="Readability preview">
+        <p>The trail winds through the quiet forest. You notice footprints leading toward an old stone bridge.</p>
+        <p>Across the bridge, a lantern glows in a distant window. The next decision is yours.</p>
+        <p>You check your supplies before moving forward, knowing the journey may be long.</p>
+      </div>
+      {settings.theme === 'custom' && <section aria-labelledby="custom-heading"><h3 id="custom-heading">Custom Theme Colors</h3>
+        <div className="settings-grid">{Object.entries(colorLabels).map(([key, label]) => <div key={key}>
+          <span className="field-label">{label} Color</span><button className="color-trigger secondary" aria-label={`Choose ${label.toLowerCase()} color`} onClick={() => setPicker(key)}><span className="swatch" style={{ background: settings.customColors[key] }} />{settings.customColors[key]}</button>
+        </div>)}</div>
+        <p className="help">Colors are checked for readable contrast before they are applied.</p>
+        <button>Example game button</button>
+      </section>}
+      <section className="setting-section"><h3>Restore Defaults</h3>
+        <p>Reset readability or colors independently. Export a backup before resetting all settings if you want to keep them.</p>
+        <div className="actions"><button onClick={() => reset('readability')}>Reset Readability Settings</button><button onClick={() => reset('colors')}>Reset Color Settings</button><button onClick={() => reset('all')}>Reset All Appearance Settings</button></div>
+      </section>
+      <section className="setting-section"><h3>Back Up Appearance Settings</h3>
+        <p>Save a JSON backup to restore later, or keep a readable summary for reference.</p>
+        <div className="actions"><button onClick={() => { download(JSON.stringify(backup(settings), null, 2), 'application/json', 'phoenixdestitute-appearance-backup.json'); setMessage('Appearance backup prepared. Check your browser downloads.'); }}>Export Appearance Settings</button>
+          <button onClick={copySummary}>Copy Appearance Summary</button>
+          <button onClick={() => { download(summary(settings), 'text/plain', 'phoenixdestitute-appearance-summary.txt'); setMessage('Summary prepared. Check your browser downloads.'); }}>Download Appearance Summary (.txt)</button></div>
+      </section>
+      <section className="setting-section" aria-label="Live Appearance Summary">
+        <details open={summaryOpen} onToggle={event => { if (event.currentTarget.open !== summaryOpen) changeSummary(event.currentTarget.open); }}>
+          <summary>Live Appearance Summary <span className="help">(show / hide)</span></summary><pre>{summary(settings)}</pre>
+        </details>
+        <p>Customized preferences: {customizationCount(settings)} of 14</p>
+        <p>Summary display: {summaryOpen ? 'Expanded' : 'Collapsed'}</p>
+        <button onClick={() => { changeSummary(true); setMessage('Live Appearance Summary expanded.'); }}>Reset Summary Display</button>
+      </section>
+      <section className="setting-section"><h3>Restore Appearance Backup</h3>
+        <p>Choose a backup from this app or the Django prototype. You can review changes before importing. Undo is available until you refresh.</p>
+        <label htmlFor="import-file">Appearance backup JSON file</label><input id="import-file" type="file" accept=".json,application/json" onChange={event => setFile(event.target.files[0] ?? null)} />
+        <div className="actions"><button onClick={importFile}>Import Appearance Settings</button>
+          <button disabled={!undo} onClick={() => { if (update(undo, 'Last import undone.', true)) setUndo(null); }}>Undo Last Import</button></div>
+      </section>
+      <p className="status" role="status" aria-live="polite">{message}</p>
+    </section>
+  </details>;
 
   return <main className="prototype-container">
     <section className="panel"><h1>PhoenixDestitute</h1><p>Your journey begins with possibility.</p></section>
-    <CharacterManager onAccountStateChange={reportAccountState} />
-    {signedIn === false && <details className="options-menu">
-      <summary className="options-toggle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="m9 3-1 3-3 1-2 4 2 2 1 4 3 1 2 3 4-1 1-3 3-1 2-4-2-2-1-4-3-1-2-3Z" /><circle cx="12" cy="12" r="3" /></svg>Options</summary>
-      <section className="panel appearance-settings" aria-labelledby="appearance-heading">
-        <h2 id="appearance-heading">Appearance Settings</h2>
-        <label htmlFor="theme">Color Theme</label>
-        <select id="theme" value={settings.theme} onChange={event => update({ ...settings, theme: event.target.value }, 'Color theme updated.')}>
-          {Object.entries(themeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-        </select>
-        <div className="settings-grid">{Object.entries(readabilityOptions).map(([key, setting]) => <div key={key}>
-          <label htmlFor={key}>{setting.label}</label>
-          <select id={key} value={settings.readability[key]} onChange={event => update({ ...settings, readability: { ...settings.readability, [key]: event.target.value } }, `${setting.label} updated.`)}>
-            {setting.options.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-          </select>
-        </div>)}</div>
-        <p className="help">Text size, fonts, and spacing are independent of your color theme. These preferences are stored in this browser.</p>
-        <div className="game-prose" aria-label="Readability preview">
-          <p>The trail winds through the quiet forest. You notice footprints leading toward an old stone bridge.</p>
-          <p>Across the bridge, a lantern glows in a distant window. The next decision is yours.</p>
-          <p>You check your supplies before moving forward, knowing the journey may be long.</p>
-        </div>
-        {settings.theme === 'custom' && <section aria-labelledby="custom-heading"><h3 id="custom-heading">Custom Theme Colors</h3>
-          <div className="settings-grid">{Object.entries(colorLabels).map(([key, label]) => <div key={key}>
-            <span className="field-label">{label} Color</span><button className="color-trigger secondary" aria-label={`Choose ${label.toLowerCase()} color`} onClick={() => setPicker(key)}><span className="swatch" style={{ background: settings.customColors[key] }} />{settings.customColors[key]}</button>
-          </div>)}</div>
-          <p className="help">Colors are checked for readable contrast before they are applied.</p>
-          <button>Example game button</button>
-        </section>}
-        <section className="setting-section"><h3>Restore Defaults</h3>
-          <p>Reset readability or colors independently. Export a backup before resetting all settings if you want to keep them.</p>
-          <div className="actions"><button onClick={() => reset('readability')}>Reset Readability Settings</button><button onClick={() => reset('colors')}>Reset Color Settings</button><button onClick={() => reset('all')}>Reset All Appearance Settings</button></div>
-        </section>
-        <section className="setting-section"><h3>Back Up Appearance Settings</h3>
-          <p>Save a JSON backup to restore later, or keep a readable summary for reference.</p>
-          <div className="actions"><button onClick={() => { download(JSON.stringify(backup(settings), null, 2), 'application/json', 'phoenixdestitute-appearance-backup.json'); setMessage('Appearance backup prepared. Check your browser downloads.'); }}>Export Appearance Settings</button>
-            <button onClick={copySummary}>Copy Appearance Summary</button>
-            <button onClick={() => { download(summary(settings), 'text/plain', 'phoenixdestitute-appearance-summary.txt'); setMessage('Summary prepared. Check your browser downloads.'); }}>Download Appearance Summary (.txt)</button></div>
-        </section>
-        <section className="setting-section" aria-label="Live Appearance Summary">
-          <details open={summaryOpen} onToggle={event => { if (event.currentTarget.open !== summaryOpen) changeSummary(event.currentTarget.open); }}>
-            <summary>Live Appearance Summary <span className="help">(show / hide)</span></summary><pre>{summary(settings)}</pre>
-          </details>
-          <p>Customized preferences: {customizationCount(settings)} of 14</p>
-          <p>Summary display: {summaryOpen ? 'Expanded' : 'Collapsed'}</p>
-          <button onClick={() => { changeSummary(true); setMessage('Live Appearance Summary expanded.'); }}>Reset Summary Display</button>
-        </section>
-        <section className="setting-section"><h3>Restore Appearance Backup</h3>
-          <p>Choose a backup from this app or the Django prototype. You can review changes before importing. Undo is available until you refresh.</p>
-          <label htmlFor="import-file">Appearance backup JSON file</label><input id="import-file" type="file" accept=".json,application/json" onChange={event => setFile(event.target.files[0] ?? null)} />
-          <div className="actions"><button onClick={importFile}>Import Appearance Settings</button>
-            <button disabled={!undo} onClick={() => { if (update(undo, 'Last import undone.', true)) setUndo(null); }}>Undo Last Import</button></div>
-        </section>
-        <p className="status" role="status" aria-live="polite">{message}</p>
-      </section>
-    </details>}
+    <CharacterManager optionsMenu={optionsMenu} />
     {picker && <ColorPicker colorKey={picker} colors={settings.customColors} onClose={() => setPicker(null)} onApply={colors => { update({ ...settings, customColors: colors }, 'Custom color applied.'); setPicker(null); }} />}
     {pendingImport && <Dialog title="Review Appearance Backup" onClose={() => setPendingImport(null)}>
       <p>{comparison.filter(([, before, after]) => before !== after).length} of 15 settings will change. Nothing changes until you confirm.</p>

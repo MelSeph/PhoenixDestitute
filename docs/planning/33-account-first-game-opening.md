@@ -20,3 +20,7 @@ The user requested an account-only landing page with Options, followed by accoun
 ## Verification
 
 All **34 browser scenarios pass** across the complete run and isolated reruns, covering account-only landing, retrying a failed sign-in, hidden Options after sign-in, selecting/creating a character, crib entry after confirmation, returning to the game after loading, and account access after browser restart/sign-in. The React settings suite passes all **6 tests** and the production build succeeds. All **322 Django tests passed** in a full run; a later rerun had one unrelated Edge GPU/cache process crash in the pre-existing inventory JavaScript test, while the focused 30 account/birth tests passed. Django check and migration drift checks pass. `legacy_game/` is unchanged.
+
+## Compact controls and section options — 2026-11-15
+
+The player requested smaller, icon-based controls; one Sign in action plus Create new below the username/password fields; and an Options control at the upper right of account and character sections. Options appears in the sign-in, character-selection, and current game-entry sections; its gear icon keeps an accessible Options label. Character roster load/delete controls use compact icons with accessible names. Account actions remain labeled and include sign-in/add icons. The game-entry placement is being used as the closest current React section to the user's “Console” wording; the application does not currently name a component Console.

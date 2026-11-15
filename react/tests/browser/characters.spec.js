@@ -33,7 +33,12 @@ async function create(page, name) {
   await page.getByRole('button', { name: 'Review birth', exact: true }).click();
   await page.getByRole('button', { name: 'Confirm birth', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'You wake up in your crib', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Show character sheet', exact: true })).toHaveAttribute('aria-expanded', 'false');
+  await expect(page.getByRole('heading', { name: `${name} · Newborn`, exact: true })).not.toBeVisible();
+  await page.getByRole('button', { name: 'Show character sheet', exact: true }).click();
   await expect(page.getByRole('heading', { name: `${name} · Newborn`, exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Hide character sheet', exact: true }).click();
+  await expect(page.getByRole('heading', { name: `${name} · Newborn`, exact: true })).not.toBeVisible();
   await page.getByRole('button', { name: 'Choose another character', exact: true }).click();
   await expect(page.getByRole('button', { name: `Load ${name}`, exact: true })).toBeEnabled();
 }
@@ -43,10 +48,12 @@ test('landing stays focused on account access and options until sign-in', async 
   await expect(page.getByRole('heading', { name: 'Sign in', exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Choose a character', exact: true })).not.toBeVisible();
   await expect(page.getByRole('button', { name: 'Create a character', exact: true })).not.toBeVisible();
-  await expect(page.getByText('Options', { exact: true })).toBeVisible();
+  await expect(page.locator('.account-landing .options-toggle')).toBeVisible();
+  await expect(page.locator('.account-landing').getByRole('button', { name: 'Sign in', exact: true })).toHaveCount(1);
+  await expect(page.locator('.account-landing').getByRole('button', { name: 'Create new account', exact: true })).toHaveCount(1);
   await register(page);
   await expect(page.getByRole('heading', { name: 'Choose a character', exact: true })).toBeVisible();
-  await expect(page.getByText('Options', { exact: true })).not.toBeVisible();
+  await expect(page.locator('[aria-label="Your characters"] .options-toggle')).toBeVisible();
 });
 
 test('a failed sign-in leaves the landing form available for another choice', async ({ page }) => {
@@ -69,15 +76,19 @@ test('create two characters, load either, and retain the selection across refres
   expect(second.birth.character_id).not.toBe(first.birth.character_id);
   await page.getByRole('button', { name: 'Load Ash', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'You wake up in your crib', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Show character sheet', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Show character sheet', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Ash · Newborn', exact: true })).toBeVisible();
   await expect(page.getByLabel('Strength value', { exact: true })).toHaveText(String(first.stats.strength));
   await page.reload();
   await expect(page.getByRole('heading', { name: 'You wake up in your crib', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Show character sheet', exact: true })).toHaveAttribute('aria-expanded', 'false');
+  await page.getByRole('button', { name: 'Show character sheet', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Ash · Newborn', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Choose another character', exact: true }).click();
   await page.getByRole('button', { name: 'Load Ember', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'You wake up in your crib', exact: true })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Ember · Newborn', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Show character sheet', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Choose another character', exact: true }).click();
   await page.locator('.character-list').screenshot({ path: testInfo.outputPath('character-list.png') });
 });
@@ -164,7 +175,7 @@ test('a lost delete response recovers through Reload characters without another 
 test('character controls and delete dialog fit at mobile 200% text', async ({ page }) => {
   await page.goto('/');
   await page.setViewportSize({ width: 375, height: 812 });
-  await page.getByText('Options', { exact: true }).click();
+  await page.locator('.options-toggle').click();
   await page.getByLabel('Text Size', { exact: true }).selectOption('200');
   await register(page); await create(page, 'Ash');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -216,5 +227,6 @@ test('a new account character loads into the game after signing in elsewhere', a
   await expect(second.getByRole('button', { name: 'Load Across Worlds', exact: true })).toBeVisible();
   await second.getByRole('button', { name: 'Load Across Worlds', exact: true }).click();
   await expect(second.getByRole('heading', { name: 'You wake up in your crib', exact: true })).toBeVisible();
+  await second.getByRole('button', { name: 'Show character sheet', exact: true }).click();
   await expect(second.getByRole('heading', { name: 'Across Worlds · Newborn', exact: true })).toBeVisible();
 });

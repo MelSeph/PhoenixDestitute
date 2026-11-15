@@ -4,7 +4,7 @@ async function start(page, { mobile = false } = {}) {
   await page.goto('/');
   if (mobile) {
     await page.setViewportSize({ width: 375, height: 812 });
-    await page.getByText('Options', { exact: true }).click();
+    await page.locator('.options-toggle').click();
     await page.getByLabel('Text Size', { exact: true }).selectOption('200');
   }
   await page.getByRole('button', { name: 'Create new account', exact: true }).click();
@@ -81,6 +81,7 @@ test('saved identity survives rolls and refresh; review is read-only and confirm
   const result = await confirm;
   expect(result.status()).toBe(201);
   const confirmed = (await result.json()).draft;
+  await page.getByRole('button', { name: 'Show character sheet', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Ash · Newborn', exact: true })).toBeVisible();
   await expect(page.getByText(`Character ID: ${confirmed.birth.character_id}`, { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Reroll unlocked attributes', exact: true })).not.toBeVisible();
@@ -91,6 +92,7 @@ test('saved identity survives rolls and refresh; review is read-only and confirm
   expect(repeated.status()).toBe(200);
   expect((await repeated.json()).draft).toEqual(confirmed);
   await page.reload();
+  await page.getByRole('button', { name: 'Show character sheet', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Ash · Newborn', exact: true })).toBeVisible();
   await page.locator('.birth-creation').screenshot({ path: testInfo.outputPath('confirmed-birth.png') });
 });
@@ -137,6 +139,7 @@ test('lost confirmation response recovers the confirmed birth without another PO
   await expect(page.getByRole('button', { name: 'Confirm birth', exact: true })).toBeDisabled();
   await page.getByRole('button', { name: 'Back to choices', exact: true }).click();
   await page.getByRole('button', { name: 'Reload draft', exact: true }).click();
+  await page.getByRole('button', { name: 'Show character sheet', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Ash · Newborn', exact: true })).toBeVisible();
   expect(confirmations).toBe(1);
 });

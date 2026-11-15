@@ -13,7 +13,7 @@ function csrfToken() {
   return cookie ? decodeURIComponent(cookie.slice('csrftoken='.length)) : '';
 }
 
-export default function CharacterManager({ onAccountStateChange }) {
+export default function CharacterManager({ optionsMenu }) {
   const [roster, setRoster] = useState(null);
   const [account, setAccount] = useState(null);
   const [accountMode, setAccountMode] = useState('login');
@@ -30,6 +30,7 @@ export default function CharacterManager({ onAccountStateChange }) {
   const [viewKey, setViewKey] = useState(0);
   const [screen, setScreen] = useState('loading');
   const [creating, setCreating] = useState(false);
+  const [characterSheetOpen, setCharacterSheetOpen] = useState(false);
   const [childState, setChildState] = useState({ busy: false, dirty: false });
   const pending = useRef(false);
   const reportState = useCallback(state => setChildState(state), []);
@@ -41,9 +42,9 @@ export default function CharacterManager({ onAccountStateChange }) {
       const [characters, accountState] = await Promise.all([
         request('/api/characters/', { signal }), request('/api/account/', { signal }),
       ]);
-      setRoster(characters); setAccount(accountState); onAccountStateChange?.(accountState);
+      setRoster(characters); setAccount(accountState);
       setScreen(!accountState.authenticated ? 'landing' : characters.current ? 'game' : 'selection');
-      setCreating(false); setReady(true); setMessage('Saved characters loaded.');
+      setCreating(false); setCharacterSheetOpen(false); setReady(true); setMessage('Saved characters loaded.');
     }
     catch (error) { if (error.name !== 'AbortError') setMessage(`Could not load saved characters: ${error.message}`); }
     finally { pending.current = false; if (!signal?.aborted) setBusy(false); }
@@ -51,7 +52,7 @@ export default function CharacterManager({ onAccountStateChange }) {
   useEffect(() => {
     const controller = new AbortController(); reload(controller.signal);
     return () => controller.abort();
-  }, [onAccountStateChange]);
+  }, []);
   function mayLeave() {
     return !childState.dirty || window.confirm('Discard unsaved identity changes? Your saved birth draft will be kept.');
   }
@@ -71,7 +72,7 @@ export default function CharacterManager({ onAccountStateChange }) {
         method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken() }, body: JSON.stringify(body),
       });
       setRoster(characters);
-      if (action === 'load') { setScreen('game'); setCreating(false); }
+      if (action === 'load') { setScreen('game'); setCreating(false); setCharacterSheetOpen(false); }
       if (action === 'new') { setScreen('selection'); setCreating(true); }
       setViewKey(key => key + 1); setChildState({ busy: false, dirty: false });
       setDeleting(null); setConfirmationName(''); setReady(true);
@@ -119,9 +120,9 @@ export default function CharacterManager({ onAccountStateChange }) {
         method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken() }, body: JSON.stringify(body),
       });
       const characters = await request('/api/characters/');
-      setAccount(result); onAccountStateChange?.(result); setRoster(characters); setPassword(''); setPassword2('');
+      setAccount(result); setRoster(characters); setPassword(''); setPassword2('');
       setScreen(!result.authenticated ? 'landing' : characters.current ? 'game' : 'selection');
-      setCreating(false);
+      setCreating(false); setCharacterSheetOpen(false);
       setViewKey(key => key + 1); setChildState({ busy: false, dirty: false }); setReady(true);
       setMessage(result.authenticated ? 'Your account characters are ready in this browser.' : 'Signed out.');
     } catch (error) {
@@ -134,11 +135,7 @@ export default function CharacterManager({ onAccountStateChange }) {
   if (screen === 'loading') return <section className="panel"><p role="status">Loading account…</p></section>;
 
   if (screen === 'landing') return <section className="panel account-landing" aria-labelledby="account-heading">
-    <h2 id="account-heading">{accountMode === 'login' ? 'Sign in' : 'Create your account'}</h2>
-    <div className="actions" aria-label="Account actions">
-      <button type="button" className={accountMode === 'login' ? '' : 'secondary'} disabled={locked} onClick={() => { setAccountMode('login'); setAccountMessage(''); }}>Sign in</button>
-      <button type="button" className={accountMode === 'register' ? '' : 'secondary'} disabled={locked} onClick={() => { setAccountMode('register'); setAccountMessage(''); }}>Create new account</button>
-    </div>
+    <div className="section-heading"><h2 id="account-heading">{accountMode === 'login' ? 'Sign in' : 'Create your account'}</h2>{optionsMenu}</div>
     <form className="account-form" onSubmit={accountAction}>
       <label htmlFor="account-username">Username</label>
       <input id="account-username" autoComplete="username" value={username} onChange={event => setUsername(event.target.value)} required />
@@ -149,7 +146,14 @@ export default function CharacterManager({ onAccountStateChange }) {
         <label htmlFor="account-password-confirm">Confirm password</label>
         <input id="account-password-confirm" type="password" autoComplete="new-password" value={password2} onChange={event => setPassword2(event.target.value)} required />
       </>}
-      <button disabled={locked}>{accountMode === 'login' ? 'Sign in' : 'Create account'}</button>
+      <div className="actions account-actions" aria-label="Account actions">
+        <button type={accountMode === 'login' ? 'submit' : 'button'} disabled={locked} onClick={() => { if (accountMode !== 'login') { setAccountMode('login'); setAccountMessage(''); } }}>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5m5 5H3" /></svg>Sign in
+        </button>
+        <button type={accountMode === 'register' ? 'submit' : 'button'} className="secondary" aria-label={accountMode === 'register' ? 'Create account' : 'Create new account'} disabled={locked} onClick={() => { if (accountMode !== 'register') { setAccountMode('register'); setAccountMessage(''); } }}>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14m-7-7h14" /></svg>{accountMode === 'register' ? 'Create account' : 'Create new'}
+        </button>
+      </div>
     </form>
     {accountMessage && <p role="alert">{accountMessage}</p>}
     <p className="help">Your characters are saved to your account and can be loaded from another browser.</p>
@@ -157,6 +161,7 @@ export default function CharacterManager({ onAccountStateChange }) {
 
   if (screen === 'game') return <>
     <section className="panel game-entry" aria-labelledby="game-heading">
+      <div className="section-heading"><span />{optionsMenu}</div>
       <div className="actions"><button className="secondary" disabled={busy || childState.busy} onClick={() => { setScreen('selection'); setCreating(false); }}>Choose another character</button>
         <button className="secondary" disabled={busy || childState.busy} onClick={() => accountAction()}>Sign out</button></div>
       {current?.kind === 'birth' ? <>
@@ -167,23 +172,29 @@ export default function CharacterManager({ onAccountStateChange }) {
         <p>Your saved story is loaded. Birth details are unavailable for this older character.</p>
       </>}
     </section>
-    {current?.kind === 'birth' && <BirthCreationPanel key={`${current.id}-${viewKey}`} readUrl="/api/characters/current/"
-      disabled={busy || !ready} onConfirmed={reload} onStateChange={reportState} />}
+    {current?.kind === 'birth' && <>
+      <button type="button" aria-expanded={characterSheetOpen} aria-controls="character-sheet"
+        onClick={() => setCharacterSheetOpen(open => !open)}>
+        {characterSheetOpen ? 'Hide character sheet' : 'Show character sheet'}
+      </button>
+      {characterSheetOpen && <div id="character-sheet"><BirthCreationPanel key={`${current.id}-${viewKey}`} readUrl="/api/characters/current/"
+        disabled={busy || !ready} onConfirmed={reload} onStateChange={reportState} /></div>}
+    </>}
     {current?.kind === 'legacy' && <section className="panel"><h2>{current.name}</h2><p>Level {current.level} · Experience {current.experience}</p></section>}
   </>;
 
   return <>
     <section className="panel" aria-labelledby="characters-heading" aria-label="Your characters">
+      <div className="section-heading"><h2 id="characters-heading">Choose a character</h2>{optionsMenu}</div>
       <div className="actions"><p>Signed in as <strong>{account?.username}</strong></p>
         <button className="secondary" disabled={busy || childState.busy} onClick={() => accountAction()}>Sign out</button></div>
-      <h2 id="characters-heading">Choose a character</h2>
       <p role="status">{message}</p>
       {roster?.characters.length === 0 && <p>No saved characters yet.</p>}
       <ul className="character-list">{roster?.characters.map(entry => <li key={entry.id}>
         <div><strong>{entry.name}</strong>{entry.active && <span> · Current character</span>}
           {entry.character_id && <p className="help">Character ID: {entry.character_id}</p>}</div>
-        <div className="actions"><button disabled={locked} aria-label={`Load ${entry.name}`} onClick={() => act('load', entry)}>Load</button>
-          <button className="secondary" disabled={locked} aria-label={`Delete ${entry.name}`} onClick={() => { setDeleting(entry); setConfirmationName(''); }}>Delete</button></div>
+        <div className="actions"><button className="icon-button compact-button" disabled={locked} aria-label={`Load ${entry.name}`} title={`Load ${entry.name}`} onClick={() => act('load', entry)}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h4m3-4 4-4-4-4m4 4H8" /></svg></button>
+          <button className="icon-button compact-button secondary" disabled={locked} aria-label={`Delete ${entry.name}`} title={`Delete ${entry.name}`} onClick={() => { setDeleting(entry); setConfirmationName(''); }}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16m-10 4v6m4-6v6M5 7l1 14h12l1-14M9 7V4h6v3" /></svg></button></div>
       </li>)}</ul>
       <div className="actions"><button disabled={locked} onClick={() => creating ? setCreating(false) : act('new')}>{creating ? 'Back to characters' : 'Create a character'}</button>
         <button className="secondary" disabled={busy || childState.busy} onClick={() => { if (mayLeave()) { setViewKey(key => key + 1); reload(); } }}>Reload characters</button></div>
