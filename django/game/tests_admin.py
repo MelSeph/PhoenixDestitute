@@ -6,6 +6,8 @@ from django.contrib.auth.models import Permission
 from django.contrib.sessions.backends.db import SessionStore
 from django.test import Client, TestCase
 from django.urls import reverse
+from django.utils import timezone
+from datetime import timedelta
 
 from . import models
 from .birth_drafts import confirm_birth, create_birth_stat_draft, set_birth_identity
@@ -23,6 +25,8 @@ class GameAdminTests(TestCase):
         draft = set_birth_identity(session_key=cls.owner_key, revision=draft["revision"], identity=identity())
         confirm_birth(session_key=cls.owner_key, revision=draft["revision"])
         player = models.Player.objects.get()
+        models.CharacterRecoveryCode.objects.create(player=player, token_digest="a" * 64,
+                                                    expires_at=timezone.now() + timedelta(hours=1))
         life = models.Playthrough.objects.get()
         models.PlayerGameSettings.objects.create(player=player)
         models.GameSave.objects.create(player=player, data={"test": True})
@@ -104,9 +108,13 @@ class GameAdminTests(TestCase):
 
     def test_staff_view_permission_does_not_grant_other_screens_or_writes(self):
         viewer = get_user_model().objects.create_user(username="viewer", is_staff=True)
-        viewer.user_permissions.add(Permission.objects.get(content_type__app_label="game", codename="view_character"))
+        viewer.user_permissions.add(*Permission.objects.filter(
+            content_type__app_label="game", codename__in=["view_character", "view_player"]))
         self.login(viewer)
         self.assertEqual(self.client.get(self.url(models.Character)).status_code, 200)
         self.assertEqual(self.client.get(self.url(models.Character, "change", models.Character.objects.first())).status_code, 200)
         self.assertEqual(self.client.get(self.url(models.BirthRecord)).status_code, 403)
+        player_list = self.client.get(self.url(models.Player))
+        self.assertEqual(player_list.status_code, 200)
+        self.assertNotContains(player_list, "issue_recovery_code")
         self.assertEqual(self.client.post(self.url(models.Character, "change", models.Character.objects.first()), {"name": "Other"}).status_code, 403)

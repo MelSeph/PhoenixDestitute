@@ -53,6 +53,16 @@ class LocalCharacter(models.Model):
     deleted_at = models.DateTimeField(null=True, blank=True)
 
 
+class CharacterRecoveryCode(models.Model):
+    """Hashed, one-use code that lets a player claim one orphaned save."""
+
+    player = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="recovery_codes")
+    token_digest = models.CharField(max_length=64, unique=True)
+    issued_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    redeemed_at = models.DateTimeField(null=True, blank=True)
+
+
 class PlayerGameSettings(models.Model):
     """Player preferences independent of any individual life or JSON save."""
 

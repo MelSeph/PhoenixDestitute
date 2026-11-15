@@ -1,7 +1,10 @@
 """Inspection screens for service-owned game state; no lifecycle bypasses."""
 from django.contrib import admin
+from django.contrib import messages
+from django.core.exceptions import ValidationError
 
 from . import models
+from .character_recovery import issue_recovery_code
 
 
 class ReadOnlyAdmin(admin.ModelAdmin):
@@ -71,9 +74,30 @@ class DeathEntryInline(ReadOnlyInline):
 
 @admin.register(models.Player)
 class PlayerAdmin(ReadOnlyAdmin):
+    actions = ["issue_recovery_code"]
     list_display = ("id", "name", "level", "experience", "gold", "legacy", "account")
     search_fields = ("=id", "name", "account__username")
     list_filter = ("level",)
+
+    @admin.action(permissions=["recovery"], description="Issue one-use recovery code for one orphaned character")
+    def issue_recovery_code(self, request, queryset):
+        if queryset.count() != 1:
+            self.message_user(request, "Select exactly one player to issue a recovery code.", messages.ERROR)
+            return
+        player = queryset.first()
+        try:
+            code = issue_recovery_code(player_id=player.pk)
+        except ValidationError as exc:
+            self.message_user(request, " ".join(exc.messages), messages.ERROR)
+            return
+        self.message_user(
+            request,
+            f"Recovery code for {player.name} (expires in 24 hours; shown once): {code}",
+            messages.WARNING,
+        )
+
+    def has_recovery_permission(self, request):
+        return request.user.is_superuser
 
 
 @admin.register(models.Character)
@@ -114,6 +138,13 @@ class LocalCharacterAdmin(SessionOwnerAdmin):
     list_display = ("id", "player", "owner_session", "created_at")
     fields = ("id", "player", "owner_session", "created_at", "deleted_at")
     search_fields = ("=id", "player__name")
+
+
+@admin.register(models.CharacterRecoveryCode)
+class CharacterRecoveryCodeAdmin(ReadOnlyAdmin):
+    list_display = ("id", "player", "issued_at", "expires_at", "redeemed_at")
+    fields = ("id", "player", "issued_at", "expires_at", "redeemed_at")
+    search_fields = ("player__name",)
 
 
 @admin.register(models.BirthStatDraft)

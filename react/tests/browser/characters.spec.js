@@ -131,3 +131,19 @@ test('older characters load their existing progress without fabricated birth sta
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Adventurer', exact: true })).toBeVisible();
 });
+
+test('recovery code adds a saved character to the current browser roster', async ({ page }) => {
+  await page.goto('/');
+  await page.getByText('Recover a saved character', { exact: true }).click();
+  await page.route('**/api/characters/recover/', async route => {
+    expect(route.request().postDataJSON()).toEqual({ code: 'one-use-code' });
+    await route.fulfill({ json: {
+      success: true, recovered: { id: 'recovered-id', name: 'Jo' }, current: null,
+      characters: [{ id: 'recovered-id', name: 'Jo', character_id: 'person-id', active: false, created_at: '2026-01-01T00:00:00Z' }],
+    } });
+  });
+  await page.getByLabel('Recovery code', { exact: true }).fill('one-use-code');
+  await page.getByRole('button', { name: 'Recover character', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Load Jo', exact: true })).toBeVisible();
+  await expect(page.getByText('Jo was added to this browser. Choose Load to open the character.', { exact: true })).toBeVisible();
+});

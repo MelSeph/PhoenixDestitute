@@ -74,6 +74,10 @@ Only one draft request can run at a time. Changed-lock/reroll writes send the la
 6. `src/styles.css` retains the prototype's visual language with responsive controls and reduced-motion support.
 7. `src/CharacterManager.jsx` coordinates the saved-character list, selection, new creation, deletion, and unsaved-edit/pending-request guards. `/api/characters/` and its `current/`, `load/`, `new/`, and `delete/` routes enforce ownership in Django.
 
+### Recovering an orphaned character
+
+In Django admin, open **Players**, select exactly one unrostered player, choose **Issue one-use recovery code for one orphaned character**, and click **Go**. Copy the code from the one-time admin message. In the target browser, open **Recover a saved character** in the character list and submit it. The code expires after 24 hours; issuing another code for that player invalidates earlier unused codes. The character is added to the roster and can then be loaded. The raw code is not stored in the database.
+
 ## Verify
 
 ```powershell

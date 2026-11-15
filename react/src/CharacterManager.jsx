@@ -20,6 +20,7 @@ export default function CharacterManager() {
   const [message, setMessage] = useState('Loading saved characters…');
   const [deleting, setDeleting] = useState(null);
   const [confirmationName, setConfirmationName] = useState('');
+  const [recoveryCode, setRecoveryCode] = useState('');
   const [viewKey, setViewKey] = useState(0);
   const [childState, setChildState] = useState({ busy: false, dirty: false });
   const pending = useRef(false);
@@ -62,6 +63,27 @@ export default function CharacterManager() {
       setMessage(`Could not complete character action: ${error.message}. Reload characters before trying again.`);
     } finally { pending.current = false; setBusy(false); }
   }
+  async function recover(event) {
+    event.preventDefault();
+    if (pending.current || childState.busy || !ready || !mayLeave()) return;
+    pending.current = true; setBusy(true); setReady(false);
+    setMessage('Recovering saved character…');
+    try {
+      if (!csrfToken()) {
+        const response = await fetch('/prototype/', { credentials: 'same-origin' });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      }
+      if (!csrfToken()) throw new Error('Cookies are required to recover a character.');
+      const result = await request('/api/characters/recover/', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken() },
+        body: JSON.stringify({ code: recoveryCode.trim() }),
+      });
+      setRoster(result); setRecoveryCode(''); setReady(true);
+      setMessage(`${result.recovered.name} was added to this browser. Choose Load to open the character.`);
+    } catch (error) {
+      setMessage(`Could not recover character: ${error.message}`);
+    } finally { pending.current = false; setBusy(false); }
+  }
   const locked = busy || !ready || childState.busy;
   const current = roster?.current;
   return <>
@@ -78,6 +100,15 @@ export default function CharacterManager() {
       </li>)}</ul>
       <div className="actions"><button disabled={locked} onClick={() => act('new')}>New character</button>
         <button className="secondary" disabled={busy || childState.busy} onClick={() => { if (mayLeave()) { setViewKey(key => key + 1); reload(); } }}>Reload characters</button></div>
+      <details>
+        <summary>Recover a saved character</summary>
+        <p className="help">Enter a one-use code issued for your character in Django admin. Codes expire after 24 hours.</p>
+        <form className="actions" onSubmit={recover}>
+          <label htmlFor="character-recovery-code">Recovery code</label>
+          <input id="character-recovery-code" autoComplete="off" value={recoveryCode} onChange={event => setRecoveryCode(event.target.value)} />
+          <button disabled={locked || !recoveryCode.trim()}>Recover character</button>
+        </form>
+      </details>
     </section>
     {roster && (current?.kind === 'legacy'
       ? <section className="panel"><h2>{current.name}</h2><p>Level {current.level} · Experience {current.experience}</p><p>Your saved story is loaded. Birth details are unavailable for this life.</p></section>

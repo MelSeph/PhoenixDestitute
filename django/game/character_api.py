@@ -6,6 +6,7 @@ from django.views.decorators.http import require_GET, require_POST
 
 from .birth_draft_api import _body
 from . import local_characters
+from .character_recovery import redeem_recovery_code
 from .models import LocalCharacter
 
 
@@ -17,7 +18,7 @@ def _respond(request, operation, fields=None):
         data, error = _body(request, fields)
         if error is not None:
             return error
-        if operation is local_characters.new_character and request.session.session_key is None:
+        if operation in (local_characters.new_character, redeem_recovery_code) and request.session.session_key is None:
             request.session.create()
     try:
         payload = operation(session_key=request.session.session_key, **data)
@@ -60,3 +61,8 @@ def new(request):
 @require_POST
 def delete(request):
     return _respond(request, local_characters.delete_character, {"character_id", "confirmation_name"})
+
+
+@require_POST
+def recover(request):
+    return _respond(request, redeem_recovery_code, {"code"})

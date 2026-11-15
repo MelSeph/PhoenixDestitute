@@ -186,3 +186,10 @@ All 254 Django tests pass, none skipped. The updated UI passes 6 settings tests 
 - **29 browser cases pass**: existing 21 plus 8 character load/new/delete cases, including old characters, ownership, draft preservation, lost responses, typed confirmation, and mobile keyboard/layout checks. Production build succeeds.
 - Migration 0018 applied after integrity-verifying `django/db.phase2q-character-roster-backup.sqlite3`. Before/after comparison preserved all pre-existing game rows; no working-data test births or deletions.
 - Django check reports no issues; migration drift check reports no changes. No legacy/prototype edits, commit, or push. See [27-character-management.md](27-character-management.md).
+
+## Orphaned character recovery — 2026-11-15
+
+- All **313 Django tests pass**, none skipped; the 6 React settings tests and all **31 Edge browser tests** pass. Production build succeeds. One initial non-elevated suite run hit a Windows Edge GPU/cache lock; rerunning with browser process access passed all 313.
+- Django system check and migration drift check pass. Migration 0019 adds only the recovery-code table; it does not change existing players, births, or ownership.
+- The working database migration is pending a verified SQLite backup and before/after preservation comparison. No legacy frontend edits, commit, or push.
+- Details: [31-orphaned-character-recovery.md](31-orphaned-character-recovery.md).

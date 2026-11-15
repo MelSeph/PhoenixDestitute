@@ -10,6 +10,8 @@
 
 **Session fix:** Admin screens were pushed at `372ee64`. The user's browser-restart save-access report exposed shared admin/game session rotation deleting ownership links. Admin now uses a separate cookie; game cookies remain persistent, with compatibility recovery for proven old staff/game selections. See [30-session-persistence.md](30-session-persistence.md). All 309 Django tests and 9 relevant browser checks pass, including closing/reopening a real persistent profile. No migration or commit/push for this fix yet.
 
+**Orphan recovery:** The user clarified that orphaned characters should be reclaimable in a new browser through an admin-level action. Admin can issue a one-use, 24-hour code for one selected orphan; the game accepts the code and adds the existing save to that browser's roster. The working DB currently contains two unrostered Players with birth records. See [31-orphaned-character-recovery.md](31-orphaned-character-recovery.md). Migration 0019 is additive; local migration will be backed up and checked. No commit/push requested.
+
 The equipment-adaptation preference is now persisted through a session-scoped API, defaulting to player-controlled timing: [15-game-settings.md](15-game-settings.md). Migration 0010 is applied locally and the full suite has 113 passing tests. Automatic adaptation/scoring remains unimplemented; the preference alone does not change gear.
 
 ## Read next

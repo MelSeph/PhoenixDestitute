@@ -14,6 +14,7 @@ urlpatterns = [
     path("api/characters/load/", character_api.load, name="api-character-load"),
     path("api/characters/new/", character_api.new, name="api-character-new"),
     path("api/characters/delete/", character_api.delete, name="api-character-delete"),
+    path("api/characters/recover/", character_api.recover, name="api-character-recover"),
     path("admin/", admin.site.urls),
     path("", views.index, name="game-home"),
     path("prototype/", views.prototype, name="game-prototype"),

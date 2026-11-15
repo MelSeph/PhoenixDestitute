@@ -24,6 +24,8 @@ python manage.py createsuperuser
 
 `@admin.register` connects models to screen configurations. `list_display`, `search_fields`, and `list_filter` control the table/search/sidebar. Read-only inlines put related records on the parent screen. Permission methods enforce inspection at the HTTP level, rather than merely hiding Save buttons. Existing Django authentication, model permissions, and CSRF protection remain in force.
 
+The later, narrowly scoped [orphan recovery action](31-orphaned-character-recovery.md) is the only new game-state admin action: it issues a one-use claim code for exactly one orphaned Player. It does not provide direct ownership edits or expose orphan lists to anonymous game clients.
+
 ## Verification
 
 Seven new admin tests exercise every model's list/detail rendering with populated related data, search/filter behavior, rejected add/change/delete requests, absence of bulk deletion, the editable preference, masked credentials, login restrictions, and limited staff view permissions. The full suite passes **305 Django tests, none skipped**. Django system checks report no issues; migration drift check reports no changes. Existing working database data/accounts and React/legacy frontends are unchanged. No migration, commit, or push.
