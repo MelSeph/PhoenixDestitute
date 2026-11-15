@@ -111,3 +111,59 @@ Publication approval: user subsequently instructed “push to github”, authori
 | Require current playthrough and revision; require saved timestamp for first conversion | Reject stale tabs and old-client overwrites after conversion; blind overwrite rejected |
 | Leave NULL-token backend records unmanaged and block deletion of snapshot-linked rows | Preserve Phase 2F data/history; automatic adoption, deletion of history, and invented disposal rules rejected |
 | Keep transition UI and full new-life restoration deferred | Inventory synchronization alone cannot safely reset the rest of the game; stale-life writes and empty saves that would erase transferred items are rejected |
+
+## Phase 2H direction and initial backend increment — 2026-11-15
+
+The user clarified that the new backend takes precedence over legacy frontend data. The legacy repair proposal was withdrawn. The frontend prototype and React preference are context only; the user explicitly declined changing scope to a React foundation, then instructed “proceed” with backend inventory operations.
+
+Implement session-scoped relational inventory reads and narrow whole-item carried/stored placement commands. Preserve identities/properties, validate slots and expected state, and refresh existing versioned compatibility saves atomically so stale browser writes fail. Do not add a frontend, import legacy rules, invent capacity limits, or perform equipment/stat changes without defined rules. Equip/unequip scope remains pending a specific question to the user. Details and limits: [13-inventory-operations.md](13-inventory-operations.md).
+
+## Equipment rule discussion — 2026-11-15
+
+The user selected defining equipment rules first. Agreed additions: upper/lower undergarments, one paired hosiery position for socks/stockings/pantyhose independent of footwear, and environment-dependent warmth/cooling plus durability for clothing. The user explicitly chose destruction at zero durability, with restoration possible at any positive durability. Retaining zero-durability items as repairable broken equipment was rejected. Exact calculations, repair costs, and history-safe destruction persistence remain undecided. See [14-equipment-rules.md](14-equipment-rules.md); these decisions do not authorize inventing the remaining gameplay rules.
+
+The user subsequently confirmed that destruction at zero and repairability above zero apply to **all equipment**, not only clothing.
+
+The user chose **gradual effectiveness degradation** as durability falls, until repair or destruction. Full effectiveness until zero was rejected; the exact curve and attribute-specific effects remain to be defined.
+
+The user selected **gentler scaling**, illustrated as 75% effectiveness at 50% durability, instead of direct scaling (50% effectiveness at 50% durability). The full curve and near-zero behavior remain undecided.
+
+The user then specified **about 25% effectiveness immediately before zero durability**, with destruction still occurring at zero. This supersedes the proposed near-zero floor of roughly 50%. Interpolation and rounding remain undecided.
+
+The user approved **straight-line interpolation within each half of durability**: full durability → 100% effectiveness, half → 75%, approaching zero from above → 25%, zero → destroyed. With positive durability fraction `r`, use `0.5 + 0.5*r` for `r >= 0.5`, otherwise `0.25 + r`. Rounding and which attributes scale remain open.
+
+The user specified that **enchantments retain full strength until equipment breaks**. Under the agreed destruction-at-zero rule, enchantment bonuses are unscaled for positive durability and cease contributing when the item is destroyed. No repairable zero-durability state is introduced.
+
+The user specified **mastery/stat-dependent repair quality**: low repair mastery plus stats insufficient for repairing the item degrades its maximum durability; high repair mastery plus high stats relevant to crafting that equipment can increase its maximum durability. Always preserving or always reducing maximum durability was not selected. Mixed mastery/stat cases, exact requirements/formulas, repair amounts/costs, and improvement limits remain undecided.
+
+The user resolved mixed repair qualifications: **high mastery / low stats preserves the current maximum**; **low mastery / high stats can reduce the maximum**, depending on mastery shortfall and gear level. The crafting recipe identifies the applicable mastery, and the mastery required to create the equipment is the baseline for repairing it to its current maximum. This resolves the previously open mixed-case decision; numerical formulas and improvement limits remain open.
+
+The user approved a **repair quality ceiling based on mastery, relevant stats, and the item**. Repeated repairs must not increase maximum durability indefinitely. The ceiling formula and item-specific limits remain open; this agreement does not select numerical caps or growth rates.
+
+The user specified **guaranteed results to a floor, with chance of success/failure above it**, and referred to exceeding the floor or ceiling. The guaranteed-floor principle is recorded; numerical floors and whether exceptional outcomes can exceed the earlier ceiling remain unresolved. Clarification is required before treating the ceiling as a soft limit.
+
+The user explicitly clarified **soft ceiling**: exceptional success may exceed the expected upper range. This resolves the prior hard-versus-soft ambiguity. The floor remains guaranteed; results above it are chance-based. Numerical outcomes and how repeated exceptional repairs interact with the earlier goal of avoiding indefinite growth remain undecided; do not silently impose a hard cap.
+
+The user then instructed “proceed”. Implement the settled deterministic durability curve, unscaled enchantment calculation, and internal wear/destruction service while leaving undefined repair rolls and thermal/stat mappings unwired. Destroyed equipment retains a history-only relational identity using a destroyed location, is omitted from usable inventory, and cannot be replayed through its old browser token. This preserves Phase 2F history without creating a repairable broken-item state. Migration 0009 adds that location choice without backfilling gear or deleting saves. See `14-equipment-rules.md` for technical limits and pending rules. Commit/push remain separately authorized.
+
+The user approved **separate ordinary clothing and armor layers**: upper undergarment → shirt/upper clothing → torso armor; lower undergarment → trousers/lower clothing → leg armor; hosiery beneath footwear. Ordinary clothing and armor do not compete for one torso/leg position. Additional footwear armor layers and multiple garments per layer remain undefined.
+
+The user approved **definition-declared multi-position equipment**: a single instance may occupy multiple positions with one identity/durability value, and all required positions must be available together. Examples include jumpsuits spanning upper/lower clothing, one-piece undergarments spanning both undergarment positions, and two-handed weapons occupying both hands. Pantyhose remains hosiery-only. No partial equipping or name-based position inference. Automatic replacement versus explicit unequipping remains undecided.
+
+The user selected **automatic equipment swaps**: conflicting equipped instances move to carried inventory, then the new item takes its required positions. Multi-position conflicts are handled once per identity and release the whole old item's occupied positions. Failure to complete any move rolls back the entire swap. Explicit manual unequipping is not required; no capacity limit or item-property changes are implied.
+
+The user revised automatic replacement: it occurs **only if the new item is better than the current equipment**. Unconditional swapping is superseded. The superiority criterion, ties/tradeoffs, comparison against multiple displaced items, and manual overrides remain unresolved. Atomicity and preservation rules still apply to qualifying swaps.
+
+The user specified that superiority considers **weather, build, player priorities, and overall score** together. No fixed weighting, ordering, or numerical scoring formula has been selected. Tie behavior, multi-item comparisons, and manual overrides remain open.
+
+The user explicitly approved **manual selection of lower-scoring equipment** as a player choice. Only automatic replacement is gated on superiority; manual choice does not imply bypassing ownership, condition, or position/eligibility validation.
+
+The user approved **complete-loadout comparison** for automatic replacements: compare all resulting equipment benefits against the current set, including every displaced instance for multi-position gear. Automatic replacement requires a strictly higher score; equal scores retain current gear. This resolves tie and multi-item comparison behavior. Manual selection remains available. Numerical score weights/formulas remain open.
+
+The user selected **player-configurable equipment adaptation timing in game settings**: automatic reevaluation/swaps on weather or build changes, or score updates only until the player requests auto-equip. Neither behavior is imposed universally. The default setting and persistence schema remain undecided; existing superiority and atomicity rules apply to automatic swaps.
+
+The user approved **player-controlled timing as the default**, with automatic adaptation available as an opt-in setting. This resolves the default-mode decision; preference persistence and reevaluation implementation remain open.
+
+The subsequent “continue” advances the settled preference into a backend-only increment: one `PlayerGameSettings` record per existing Player, default false, and session-scoped GET/POST `/api/game/settings/`. Reads do not create rows; updates accept a boolean with CSRF/ownership checks. Player-level persistence survives life transitions and is independent of save JSON. Migration 0010 creates the table without backfill. The setting does not trigger equipment changes until a scoring/adaptation engine is defined and implemented. See [15-game-settings.md](15-game-settings.md). No frontend, commit, or push is included.
+
+Publication authorization: the user subsequently instructed “commit and push to github”, approving publication of the accumulated Phase 2H inventory commands, durability/destruction foundation, equipment-setting persistence, tests, migrations 0009–0010, and planning decisions. The full suite passed 113 tests before publication; scoring, repair rolls, equipment positions, and frontend integration remain deferred as documented.

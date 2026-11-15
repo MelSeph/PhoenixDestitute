@@ -2,6 +2,10 @@
 
 **Status (2026-11-15):** Phase 2F completed and pushed at `76d1123` (migration 0007 applied, 60 tests passed, confirmed by user). Phase 2G browser inventory bridge authorized with “make it so”; local implementation and validation are documented in [12-browser-inventory.md](12-browser-inventory.md). Commit/push approval remains separate. Earlier planning-only boundaries below are retained as historical context; later approved phase scopes supersede them.
 
+**Current local work:** Phase 2G was pushed at `84e7799`. Phase 2H inventory reads/movement and the agreed durability/destruction increment are implemented locally; see [13-inventory-operations.md](13-inventory-operations.md) and [14-equipment-rules.md](14-equipment-rules.md). Equipment slots/thermal data and complete equip/repair/stat integration remain incomplete; no React migration is authorized.
+
+The equipment-adaptation preference is now persisted through a session-scoped API, defaulting to player-controlled timing: [15-game-settings.md](15-game-settings.md). Migration 0010 is applied locally and the full suite has 113 passing tests. Automatic adaptation/scoring remains unimplemented; the preference alone does not change gear.
+
 ## Read next
 
 1. [01-game-overview.md](01-game-overview.md) for the observed original game.

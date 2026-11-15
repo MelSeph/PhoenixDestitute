@@ -1,0 +1,69 @@
+# Equipment rules — agreed decisions and remaining design
+
+## Agreed rules
+
+Recorded 2026-11-15 from the equipment discussion. The user instructed us to define equipment rules before implementing equip/unequip. The new backend takes precedence over legacy game representations.
+
+- Undergarments have separate upper and lower positions and can be worn beneath outer equipment.
+- Socks, stockings, and pantyhose use one hosiery position, separate from footwear. Paired hosiery is always one complete equipment item; no left/right sock positions.
+- Pantyhose does not automatically occupy the lower-undergarment position. Further layering restrictions have not been defined.
+- Ordinary clothing and armor use separate torso and leg layers and may be worn together. The agreed arrangements are upper undergarment → ordinary upper clothing (such as a shirt) → torso armor, and lower undergarment → ordinary lower clothing (such as trousers) → leg armor. Hosiery remains beneath footwear. This does not define extra footwear/armor layers or allow multiple ordinary garments in the same layer.
+- Each equipment definition explicitly declares every position it occupies. A single item may span positions, such as upper/lower clothing for a jumpsuit, upper/lower undergarments for a one-piece, or both hands for a two-handed weapon. All required positions must be available together; partial equipping is not allowed. The item keeps one identity and one durability value. Pantyhose still occupies only hosiery. Position requirements are definition data, not guesses based on item names.
+- Automatic replacement occurs **only when the complete resulting loadout scores strictly higher than the current loadout**. The comparison must consider weather, character build, player priorities, and overall equipment score. A multi-position replacement accounts for all displaced equipment and lost benefits (for example, a two-handed weapon versus the current sword and shield together). Equal scores keep the current gear. Weighting/hierarchy and the numerical scoring formula remain undecided; do not invent them.
+- Players may deliberately equip lower-scoring items manually. The superiority check governs automatic replacement, not the player's manual equipment choice. This does not waive item ownership, usable condition, occupied-position handling, or other equipment eligibility rules.
+- Equipment adaptation timing is a player-selectable game setting. **Player-controlled timing is the default; automatic adaptation is opt-in.** In automatic-adaptation mode, weather/build changes reevaluate carried equipment and may trigger qualifying loadout upgrades. In player-controlled mode, such changes update scores but swaps wait for a player-requested auto-equip action. Both modes retain the complete-loadout, strictly-better, atomic-swap rules and manual lower-score selection. Preference persistence is implemented in `PlayerGameSettings`; see [15-game-settings.md](15-game-settings.md). Scoring and automatic reevaluation/swapping remain unimplemented.
+- When automatic replacement qualifies, conflicting equipped items move into carried inventory before assigning the new item's required positions. Each conflicting instance moves only once even if it occupies multiple positions; moving it releases all positions it occupied. The swap is atomic: if a required move cannot complete, the original equipment and inventory remain unchanged. Identities, quantities, durability, upgrades, and other properties are preserved. This does not introduce an inventory-capacity rule.
+- Clothing, including undergarments and hosiery, has warmth and cooling ratings whose relevance depends on the environment. Clothing also has durability.
+- At zero durability, the item is destroyed. It cannot be restored after reaching zero.
+- At any positive durability, the item can be restored. This does not yet specify repair costs, requirements, or how much an individual repair restores.
+- The destruction-at-zero and repair-above-zero rule applies to all equipment, including weapons, armor, clothing, undergarments, and hosiery, as explicitly confirmed by the user.
+- Equipment effectiveness gradually degrades as durability falls, until the item is repaired or destroyed. Full effectiveness at every positive durability was rejected. The curve is agreed below; its mapping to individual attributes remains undecided.
+- The user selected gentler scaling over direct proportional scaling: 75% effectiveness at 50% durability, approaching 25% effectiveness just above zero, then destruction at zero. The user approved straight-line interpolation separately in the upper and lower halves. Rounding and attribute coverage are not yet finalized.
+- Enchantment bonuses remain at full strength at every positive durability. They do not use the degradation multiplier. At zero durability, the item is destroyed and its enchantments no longer contribute. This does not introduce a separate repairable broken-item state.
+- Repair quality depends on the applicable mastery and player stats relevant to crafting that equipment. The crafting recipe identifies which mastery applies. The mastery required to create the item is the baseline for repairing it to its current maximum durability.
+- High mastery with low relevant stats restores to the current maximum without changing that maximum.
+- Low mastery with high relevant stats can lower maximum durability; the outcome depends on how far mastery falls short and the gear's level. Strong stats do not automatically compensate for insufficient mastery.
+- Low mastery together with insufficient relevant stats reduces maximum durability, as previously specified. High mastery together with high relevant crafting stats can increase maximum durability.
+- Superior repairs have a **soft quality ceiling** determined by applicable mastery, relevant stats, and the item. Exceptional success can exceed it; it is an expected upper range, not an absolute cap. The user explicitly clarified soft ceiling after the earlier ceiling discussion.
+- Results up to the floor are guaranteed. Results above the floor are chance-based, including exceptional outcomes above the soft ceiling. The floor/ceiling formulas, outcome probabilities, and exceptional improvement amounts remain undecided.
+- Avoiding indefinite repair growth was an earlier agreed goal. A soft ceiling alone does not enforce that goal; the rule for repeated improvements remains to be designed. No hidden hard cap, diminishing-return formula, or unlimited-growth policy has been selected.
+- Repairs therefore need not preserve the original maximum. Numerical mastery/stat thresholds and penalty/improvement amounts or probabilities remain undecided.
+
+### Agreed durability curve
+
+For positive durability, let `r = current_durability / maximum_durability`, with `0 < r <= 1`:
+
+- Upper half (`r >= 0.5`): effectiveness multiplier = `0.5 + 0.5 * r`.
+- Lower half (`r < 0.5`): effectiveness multiplier = `0.25 + r`.
+- At zero durability: destroy the item; the positive-durability formula does not apply.
+
+Both segments meet at 75% effectiveness at half durability. Full durability gives 100%; positive durability approaching zero approaches 25%. Base item attributes must remain intact so later calculation/repair does not compound previous reductions. The backend calculator now implements this curve; integration into character stats remains deferred.
+
+## Proposed, not yet finalized
+
+- General equipment positions: head, torso, hands, waist, legs, feet, main hand, off hand, plus the agreed undergarment and hosiery positions.
+- Definition-level warmth/cooling and maximum durability, with current durability stored per item instance.
+- Effective stats calculated by Django from base character stats and equipped modifiers, rather than repeatedly adding bonuses.
+
+## Still to define before a complete equipment system
+
+- Rating scales, environmental thresholds, and how multiple garments combine warmth/cooling.
+- Which attributes use the agreed degradation curve, and which actions/environmental conditions cause wear.
+- Repair mechanics, including materials, cost, access, amount restored, numerical mastery/stat requirements, penalty/improvement amounts or probabilities, gear-level influence, and the agreed quality ceiling's formula and item-specific limits.
+- Equipment eligibility, layering beyond the agreed torso/leg arrangements and hosiery/footwear distinction, accessories, and changes to current resources when equipment changes maximum stats.
+- Recipes, equipment definitions/positions, warmth/cooling scales, and the complete equip/unequip/stat lifecycle still need implementation after the remaining design decisions.
+
+## Implemented durability increment — 2026-11-15
+
+The user's “proceed” following the soft-ceiling clarification authorizes progressing on the settled rules. This increment implements deterministic durability and destruction; it does not invent repair probabilities, formulas, mastery thresholds, or thermal behavior.
+
+1. `equipment_condition.effectiveness_multiplier` calculates the approved two-segment curve using exact fractions, so rounding remains a caller decision. `effective_bonus` scales an explicitly supplied nonnegative base bonus and adds the enchantment bonus unscaled. At zero, both contribute zero. Original attributes are never overwritten by calculated values. Negative modifier behavior remains undefined and is rejected by this helper.
+2. `apply_equipment_wear` is an internal transactional Django service for future gameplay callers, not a public wear endpoint. It validates session-independent authorized Player/active-life ownership, equipment kind, and a positive whole wear amount. Existing `properties.durability` and `properties.max_durability` use whole units; there is no invented default durability for old gear. Each call represents a distinct wear event; repeated event delivery is the future caller's responsibility.
+3. At or beyond zero remaining durability, the existing row receives `location="destroyed"` and `slot=None`. This releases a carried slot and retains the original primary key/client token solely to protect history. The item is destroyed in gameplay, cannot be moved or worn again, and is excluded from usable inventory and browser serialization. No repair route is introduced for destroyed items.
+4. Death snapshots retain copied properties and original identity references. A destruction or durability change after death makes the existing stale-snapshot Regression validation fail. No death freeze/resurrection policy is invented.
+5. Backend wear refreshes existing versioned JSON/mirror saves and rotates the browser revision transactionally. Destroyed tokens cannot be replayed even with a fresh revision. For existing equipment with both durability fields, browser saves cannot alter/remove those server-held values. Other legacy instance properties retain their previous compatibility behavior. The Phase 2G interface still allows creation of new browser-supplied instances; full acquisition authority is not implemented by this increment.
+6. Migration `0009_equipment_destruction` adds the destroyed location choice. It performs no item backfill, deletion, or legacy-save conversion. SQLite backup: `django/db.phase2h-durability-backup.sqlite3`; migration applied locally. No frontend, React, or `legacy_game/` changes.
+
+The original game's equipped-name fields and cached player stats are not rewritten when backend gear is destroyed. That frontend may reject loading contradictory worn-item data; it is not the target equipment/stat implementation. A future backend-driven equip/stat flow must derive usable equipment from relational state rather than those legacy fields.
+
+Fourteen added tests cover the curve and limit behavior, unscaled enchantments, noncompounding calculations, invalid input, identity/properties, destruction in every usable location, history, owner/life scoping, save rollback, and resurrection attempts through compatibility saves. Full validation results are recorded in `11-validation.md`. No commit or push performed.

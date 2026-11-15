@@ -78,3 +78,25 @@ Do not convert a partial check into a passed check without doing the work.
 - Chromium subprocess launch initially failed inside the Windows sandbox. The same test passed after the user approved running outside that sandbox. The browser's own sandbox was not disabled.
 - `legacy_game/` remains untouched. Existing untracked Phase 2C–2F README files were left alone. No commit or push performed.
 - See [12-browser-inventory.md](12-browser-inventory.md) for the implemented contract and remaining gameplay limitations. Headless tests cover adapter and mocked HTTP calls; they are not a manual full-game playthrough or concurrent load test.
+
+## Phase 2H first increment — local validation — 2026-11-15
+
+- Full suite: **90 tests passed, none skipped** (76 previous + 14 inventory operation/API tests), including existing headless Chromium checks.
+- `check`: no issues. `makemigrations --check --dry-run`: no changes detected. `git diff --check`: passed.
+- No schema changes, data migration, frontend changes, or edits to `legacy_game/`. No commit or push.
+- Equipment/stat rules remain pending user clarification; this increment implements reads and carried/stored movement only. See [13-inventory-operations.md](13-inventory-operations.md).
+
+## Phase 2H durability increment — local validation — 2026-11-15
+
+- Final full suite: **104 tests passed, none skipped** (90 previous + 14 durability/destruction tests), including existing headless Chromium checks.
+- `python manage.py check`: no issues. `python manage.py makemigrations --check --dry-run`: no changes detected.
+- SQLite backup created at `django/db.phase2h-durability-backup.sqlite3`; migration `0009_equipment_destruction` applied successfully. `showmigrations game` confirms 0001–0009 applied. No existing items were destroyed or converted by the migration.
+- Tests verify the agreed two-segment curve, unscaled enchantments, zero-durability destruction, retained death history, stale-snapshot rejection, save rollback, and blocked browser identity resurrection/durability overwrites.
+- Wear remains an internal service; combat/environment triggers, repair outcomes, full equip/stat integration, and thermal formulas are not implemented. No frontend or `legacy_game/` changes; no commit or push.
+
+## Phase 2H equipment setting — local validation — 2026-11-15
+
+- Full suite: **113 tests passed, none skipped** (104 previous + 9 settings tests), including existing headless Chromium checks.
+- `check`: no issues. `makemigrations --check --dry-run`: no changes detected.
+- Created SQLite backup `django/db.phase2h-settings-backup.sqlite3`, then applied `0010_player_game_settings` successfully. `showmigrations game` confirms 0001–0010 applied. No settings backfill or save conversion.
+- The API persists the opt-in preference only; no scoring engine, automatic swap execution, or frontend controls are implemented. No commit or push. Details: [15-game-settings.md](15-game-settings.md).

@@ -39,6 +39,13 @@ class Player(models.Model):
         return self.name
 
 
+class PlayerGameSettings(models.Model):
+    """Player preferences independent of any individual life or JSON save."""
+
+    player = models.OneToOneField(Player, on_delete=models.CASCADE, related_name="game_settings")
+    auto_adapt_equipment = models.BooleanField(default=False)
+
+
 class GameSave(models.Model):
     player = models.OneToOneField(
         Player,
@@ -184,6 +191,7 @@ class InventoryItem(models.Model):
         CARRIED = "carried", "Carried inventory"
         EQUIPPED = "equipped", "Equipped"
         STORED = "stored", "World storage"
+        DESTROYED = "destroyed", "Destroyed (history only)"
 
     playthrough = models.ForeignKey(
         Playthrough, on_delete=models.PROTECT, related_name="inventory_items"

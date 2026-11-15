@@ -16,7 +16,7 @@ def serialize_items(life):
                  definition_key=item.definition_key, kind=item.kind,
                  quantity=item.quantity, properties=copy.deepcopy(item.properties),
                  location=item.location, slot=item.slot)
-            for item in life.inventory_items.exclude(client_token=None).order_by("pk")]
+            for item in life.inventory_items.exclude(client_token=None).exclude(location="destroyed").order_by("pk")]
 
 
 def reconcile(life, incoming, previous, legacy_updated_at=None):
@@ -34,7 +34,7 @@ def reconcile(life, incoming, previous, legacy_updated_at=None):
     if not isinstance(entries, list):
         invalid("Inventory items must be a list.")
     current = {str(item.client_token): item for item in
-               life.inventory_items.select_for_update().exclude(client_token=None)}
+               life.inventory_items.select_for_update().exclude(client_token=None).exclude(location="destroyed")}
     tokens, slots, pending = set(), set(), []
     for entry in entries:
         if not isinstance(entry, dict):
@@ -62,6 +62,8 @@ def reconcile(life, incoming, previous, legacy_updated_at=None):
             invalid("Invalid item definition key.")
         if kind not in InventoryItem.Kind.values or location not in InventoryItem.Location.values:
             invalid("Invalid item kind or location.")
+        if location == InventoryItem.Location.DESTROYED:
+            invalid("Only the backend can destroy equipment.")
         if type(quantity) is not int or not 1 <= quantity <= 2147483647:
             invalid("Quantity must be a positive integer.")
         if kind == InventoryItem.Kind.EQUIPMENT and quantity != 1:
@@ -76,6 +78,15 @@ def reconcile(life, incoming, previous, legacy_updated_at=None):
             invalid("Only carried items may occupy inventory slots.")
         if item.pk and (item.definition_key != key or item.kind != kind):
             invalid("An existing identity cannot change item definition or kind.")
+        if kind == InventoryItem.Kind.EQUIPMENT:
+            if properties.get("durability") == 0:
+                invalid("Zero-durability equipment cannot be saved as usable.")
+            if "durability" in properties and "max_durability" in properties:
+                from .equipment_condition import validate_durability
+                validate_durability(properties["durability"], properties["max_durability"])
+            if item.pk and "durability" in item.properties and "max_durability" in item.properties:
+                if any(properties.get(key) != item.properties[key] for key in ("durability", "max_durability")):
+                    invalid("Durability changes require a backend operation.")
         item.definition_key, item.kind, item.quantity = key, kind, quantity
         item.location, item.slot, item.properties = location, slot, copy.deepcopy(properties)
         pending.append(item)
