@@ -2,7 +2,7 @@
 
 **Status (2026-11-15):** Phase 2F completed and pushed at `76d1123` (migration 0007 applied, 60 tests passed, confirmed by user). Phase 2G browser inventory bridge authorized with “make it so”; local implementation and validation are documented in [12-browser-inventory.md](12-browser-inventory.md). Commit/push approval remains separate. Earlier planning-only boundaries below are retained as historical context; later approved phase scopes supersede them.
 
-**Current local work:** Phase 2G was pushed at `84e7799`, Phase 2H at `d24049a`, and Phase 2I at `251108a`. Phase 2J regional thermal definitions and ordinary per-item effects are approved and implemented locally; see [17-thermal-definitions.md](17-thermal-definitions.md). Migration 0012 is applied; 152 tests pass. Public equip APIs, complete stat/repair/thermal integration, and automatic scoring remain incomplete; no React migration is authorized.
+**Current local work:** Phase 2G was pushed at `84e7799`, Phase 2H at `d24049a`, Phase 2I at `251108a`, and Phase 2J at `8f049c3`. Phase 2K ordinary outfit thermal calculation is approved and implemented locally; see [18-outfit-thermal.md](18-outfit-thermal.md). Migration 0013 is applied; 174 tests pass. Public equip APIs, complete stat/repair/weather integration, enchantment totals, and automatic scoring remain incomplete; no React migration is authorized.
 
 The equipment-adaptation preference is now persisted through a session-scoped API, defaulting to player-controlled timing: [15-game-settings.md](15-game-settings.md). Migration 0010 is applied locally and the full suite has 113 passing tests. Automatic adaptation/scoring remains unimplemented; the preference alone does not change gear.
 

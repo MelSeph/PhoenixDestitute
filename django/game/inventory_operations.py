@@ -26,7 +26,9 @@ def _inventory(life):
                   location=item.location, slot=item.slot,
                   equipment_definition=(dict(id=item.equipment_definition_id, key=item.equipment_definition.key,
                       positions=sorted(row.position for row in item.equipment_definition.required_positions.all()),
-                      thermal_coverage=[dict(region=row.region, warmth=str(row.warmth), cooling=str(row.cooling))
+                      thermal_coverage=[dict(region=row.region, warmth=str(row.warmth), cooling=str(row.cooling),
+                          breathability=str(row.breathability) if row.breathability is not None else None,
+                          layer_order=row.layer_order)
                           for row in item.equipment_definition.thermal_coverage.all()] or None)
                       if item.equipment_definition_id else None))
              for item in life.inventory_items.exclude(location="destroyed").select_related("equipment_definition")

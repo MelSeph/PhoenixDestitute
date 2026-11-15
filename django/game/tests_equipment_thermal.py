@@ -118,7 +118,8 @@ class EquipmentThermalTests(TestCase):
         self.assertEqual(response.status_code, 200)
         definition = response.json()["inventory"]["items"][0]["equipment_definition"]
         self.assertEqual(definition["positions"], ["hosiery"])
-        self.assertEqual(definition["thermal_coverage"], [{"region": "feet", "warmth": "4.0000", "cooling": "2.0000"}])
+        self.assertEqual(definition["thermal_coverage"], [{"region": "feet", "warmth": "4.0000", "cooling": "2.0000",
+                                                         "breathability": None, "layer_order": None}])
 
     def test_thermal_changes_invalidate_pending_move_and_equip(self):
         old = read_inventory(player_id=self.player.pk)

@@ -116,3 +116,12 @@ Do not convert a partial check into a passed check without doing the work.
 - Created backup `django/db.phase2j-backup.sqlite3`, then applied `0012_equipment_thermal_coverage` successfully. `showmigrations game` confirms 0001–0012 applied. No automatic rating assignment, catalog seed, property conversion, or save mutation.
 - Tests cover regional coverage independent of equipment positions, distinct and zero ratings, missing configuration, exact wear-scaled decimals, metadata/revision changes, constraints, invalid data, read isolation, and ownership/life/condition validation.
 - No outfit totals, armor suppression coefficients, weather/scoring formulas, thermal enchantment interpretation, or frontend work. No `legacy_game/` edits, commit, or push. Details: [17-thermal-definitions.md](17-thermal-definitions.md).
+
+## Phase 2K — local validation — 2026-11-15
+
+- Full suite: **174 tests passed, none skipped** (152 previous + 22 outfit-layering tests), including existing headless Chromium checks.
+- `python manage.py check`: no issues. `python manage.py makemigrations --check --dry-run`: no changes detected.
+- Created backup `django/db.phase2k-backup.sqlite3`, then successfully applied `0013_thermal_layering`. `showmigrations game` confirms 0001–0013 applied. Existing coverage fields remain unconfigured (NULL); no item/save conversion or parameter assignment.
+- Hand-calculated tests verify additive warmth, multiplicative regional cooling, equal orders, wear-dependent breathability, destruction, and multi-position identity. Additional tests verify missing data, read-only behavior, validation, revisions, and ownership/life isolation.
+- Existing Phase 2J calculations remain usable without the new optional layering fields. Its API serialization assertion now includes the two additive null metadata fields; no prior rating assertion was removed.
+- No weather/enchantment totals, scoring, public thermal endpoint, frontend, or `legacy_game/` changes. No commit or push. Details: [18-outfit-thermal.md](18-outfit-thermal.md).

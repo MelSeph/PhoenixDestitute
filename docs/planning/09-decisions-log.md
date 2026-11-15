@@ -195,3 +195,25 @@ The user confirmed that eight **thermal regions** are sufficient: head, neck, up
 The user approved the reviewed Phase 2J plan with “yes”: additive explicit regional warmth/cooling definition records, inventory metadata/revision integration, ordinary per-item wear-scaled calculations, and tests. Missing data remains unconfigured rather than inferred as zero. Decimal storage uses four fractional places; this does not choose rating units or balance values. Calculations preserve exact fractions internally, with no new rounding rule. No outfit aggregation, numeric cooling suppression, weather/scoring engine, thermal enchantment schema, or frontend work is implemented. Details: [17-thermal-definitions.md](17-thermal-definitions.md). Migration 0012 creates only the new table, with no seed data or conversion. Commit/push require separate approval.
 
 Publication authorization: the user subsequently instructed “commit and push to github”, approving publication of the Phase 2J thermal definition/calculator implementation, migration 0012, tests, and planning decisions. The full suite passed 152 tests before publication. Deferred outfit, weather, scoring, and frontend work remains outside this commit's scope.
+
+## Outfit thermal calculation discussion — 2026-11-15
+
+Phase 2J was pushed at `8f049c3`. The user approved **explicit per-region breathability percentages** for outer layers: 100% allows all ordinary underlying cooling, 50% allows half, and 0% blocks it. Do not infer breathability from item weight. Multiple-layer composition, effects of durability on breathability, and the concrete next implementation scope remain open.
+
+The user approved **multiplicative regional breathability stacking**: 80% × 50% outer layers pass 40% of an inner garment's ordinary cooling. A garment's own cooling is restricted only by overlapping layers outside it. This resolves multiple-layer composition; durability interaction and explicit regional layer ordering remain open.
+
+The user specified that **holes make worn garments more breathable**. Cooling blockage must decrease with wear; simply scaling breathability downward is rejected. The numerical durability-to-blockage curve remains to be chosen. Destroyed items no longer contribute a layer.
+
+The user approved applying the agreed wear curve to **cooling blockage**: `effective_breathability = 1 - (1 - base_breathability) * durability_multiplier` for positive durability, using fractions in [0, 1]. Initially airtight gear passes 0% at full durability, 25% at half, and approximately 75% immediately before destruction. Destruction removes the blocking layer entirely. This resolves the durability/breathability formula; regional layer ordering and next implementation scope remain open.
+
+The user approved **explicit per-region layer order in equipment definitions**, separate from occupied equipment positions. This represents undergarment → clothing → armor and cases such as a long coat covering legs outside trousers while occupying upper clothing. Equal-order behavior and the numeric representation remain open.
+
+The user approved **equal-order layers do not block one another**: cooling suppression uses only overlapping garments with a strictly higher regional layer order. This resolves equal-order behavior without imposing a uniqueness constraint on regional thermal depth.
+
+The user approved **additive ordinary warmth within each region**: sum the individual condition-adjusted ratings. Breathability does not separately reduce warmth. This resolves the ordinary warmth aggregation rule; temperature interpretation and enchantment totals remain outside this calculation.
+
+## Phase 2K — outfit thermal authorization — 2026-11-15
+
+The user approved the reviewed Phase 2K scope with “yes”: nullable per-region breathability percentages and layer-order fields, exact internal ordinary outfit calculations from equipped instances, incomplete-data diagnostics without partial totals, inventory revision integration, and tests. Higher nonnegative integer order is outer; equal order never blocks. Regional cooling sums each condition-adjusted contribution after the product of overlapping outer effective breathabilities. Migration 0013 preserves existing coverage as unconfigured by adding nullable fields without backfill. No weather/enchantment totals, scoring engine, Player stat writes, public calculator endpoint, or frontend work. Details: [18-outfit-thermal.md](18-outfit-thermal.md). Commit/push require separate approval.
+
+Publication authorization: the user subsequently instructed “commit and push to github”, approving publication of the Phase 2K layering model/calculator, migration 0013, tests, and planning decisions. The full suite passed 174 tests before publication. Weather/enchantment totals, scoring, and frontend work remain deferred.

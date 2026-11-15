@@ -1,7 +1,7 @@
 
 from decimal import Decimal
 
-from django.core.validators import MinValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 
@@ -226,6 +226,11 @@ class EquipmentThermalCoverage(models.Model):
     region = models.CharField(max_length=16, choices=ThermalRegion.choices)
     warmth = models.DecimalField(max_digits=12, decimal_places=4, validators=[MinValueValidator(Decimal("0"))])
     cooling = models.DecimalField(max_digits=12, decimal_places=4, validators=[MinValueValidator(Decimal("0"))])
+    # NULL preserves unconfigured layering on existing coverage records.
+    breathability = models.DecimalField(
+        max_digits=7, decimal_places=4, null=True, blank=True,
+        validators=[MinValueValidator(Decimal("0")), MaxValueValidator(Decimal("100"))])
+    layer_order = models.PositiveIntegerField(null=True, blank=True)
 
     class Meta:
         ordering = ["region"]
@@ -233,6 +238,8 @@ class EquipmentThermalCoverage(models.Model):
             models.UniqueConstraint(fields=["definition", "region"], name="unique_definition_thermal_region"),
             models.CheckConstraint(condition=models.Q(region__in=ThermalRegion.values), name="valid_thermal_region"),
             models.CheckConstraint(condition=models.Q(warmth__gte=0, cooling__gte=0), name="nonnegative_thermal_ratings"),
+            models.CheckConstraint(condition=(models.Q(breathability__isnull=True)
+                | models.Q(breathability__gte=0, breathability__lte=100)), name="thermal_breathability_percentage"),
         ]
 
 
