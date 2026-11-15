@@ -249,3 +249,39 @@ Phase 2M was pushed at `e44ddf8`. The user approved the reviewed Phase 2N plan w
 No existing API behavior, models, saves, frontend, weather, or scoring rules are changed. No new migration or database update is required. Details: [21-outfit-thermal-api.md](21-outfit-thermal-api.md). Commit/push require separate approval.
 
 Publication authorization: the user subsequently instructed “commit and push to github”, approving publication of the Phase 2N read-only thermal endpoint, exact JSON serialization, tests, and documentation. The full suite passed 228 tests before publication. No migration, frontend, or new gameplay rules are included.
+
+## Birth-first character creation direction — 2026-11-15
+
+Phase 2N was pushed at `fa00f13`. The user wants to shift focus from equipment to a completely new opening: first birth, chosen looks, and random starting stats between 1 and 5, with ID/Name on the character sheet and the listed physical, social, luck, and resource fields. Endurance/Stamina were found in earlier material; their inclusion/formula is not automatically adopted. Condition and resource semantics require clarification before schema design. Identity generation, roll mechanics, appearance details, and growth/lifecycle behavior remain proposals. Sexual attraction is an adult-only design boundary and will not be scored for newborn/child characters. No code or data reset is approved by this discussion. See [22-birth-first-character-creation.md](22-birth-first-character-creation.md).
+
+The user added **player-chosen gender** and clarified that life experiences should shape appearance from birth, with attraction relevant later. Gender options/pronouns/mechanical effects and appearance formulas remain undecided. Early-life tracking will be nonsexual appearance/history and social impressions; sexual attraction remains an adult-only (18+) boundary. Younger-teen activation is not adopted. No model/API/frontend changes are authorized by this clarification.
+
+The user defined **Condition as all of constitution/fitness and current wellbeing**, including hunger, fatigue, illness, and injuries. The original random 1–5 birth value still needs reconciliation with these changing factors: a baseline/current split and any combining formula remain proposals. No independent extra stat or status scale has been silently adopted.
+
+The user approved **baseline and current Condition**: initially roll baseline Condition from 1–5, derive current Condition from that baseline and present wellbeing, and track underlying states separately so changes are explainable. Current Condition is not independently rerolled. The status scales/formula, current range, and long-term baseline growth remain open.
+
+The user corrected **Health and Mana birth values to random 10–35**, replacing the earlier 1–5 direction for those resources. This does not settle maximum-versus-current representation or starting-full behavior. Other agreed rolled attributes retain the 1–5 direction; no Stamina rule is implied.
+
+The user then approved **separate current and maximum Health/Mana pools**: each 10–35 birth roll sets that resource's starting maximum and current amount begins equal to it. For example, Health 27 starts at 27/27. Later growth/regeneration formulas and Stamina remain undecided.
+
+The user approved **Endurance (1–5 starting sustained-exertion attribute)** and **Stamina (distinct current/maximum energy pool)** alongside Condition's wellbeing/performance role. Stamina is crucial to the part immediately after character creation. Its range, starting fullness, Endurance relationship, consumption/recovery, and the post-birth gameplay sequence remain unspecified; do not invent them or adopt legacy formulas implicitly.
+
+The user defined Stamina as a **shared budget for physical, mental, and other training from newborn through adulthood**. Training leads to exhaustion, which requires rest before further activity. This is not limited to combat/physical actions. Session costs, exact exhaustion threshold/gating, rest/recovery timing, initial capacity, and the training/age progression details remain open.
+
+The user selected **variable training costs depending on activity, intensity, and the associated stat**, and replaced independent resource birth rolls with **Health = Strength × multiplier; Mana = Intelligence × multiplier; Stamina = Endurance × multiplier**. Multipliers remain open. This supersedes independent 10–35 Health/Mana rolls; the earlier full starting Health/Mana pools remain agreed. Stamina fullness, cost/stat dependency direction, formulas, recovery, and stat-growth refill behavior are not decided. ×10 each (10–50 with 1–5 base stats) is an assistant recommendation awaiting approval, not an adopted constant.
+
+The user approved **×10 as the initial multiplier for all three resource maximums**: Health = Strength × 10, Mana = Intelligence × 10, Stamina = Endurance × 10. With 1–5 parent birth attributes this gives 10–50 starting maxima and supersedes the earlier 10–35 independent-roll range. Health/Mana still begin full; Stamina fullness and later refill/recovery behavior remain open. No lifelong stat/resource cap is implied.
+
+The user confirmed **Stamina also starts full at birth**. Initial current Health, Mana, and Stamina each equal their respective derived maximums. No training, recovery, or stat-growth refill formula is implied.
+
+The user requested **unlimited creation rerolls with up to three locked base stats**, replacing the assistant's single-pre-confirmation-roll proposal. Locked values persist and unlocked base attributes reroll within 1–5. Resource maxima remain derived ×10 from their parents rather than separately rerolled/locked. Explicit draft rerolls are distinct from refreshing/loading or retrying a confirmed birth. Lock switching, exact sampling/API/retry behavior, and implementation scope remain open; no reroll currency/limit or permanent-lock rule is implied.
+
+The user confirmed **locks can be freely removed or switched before birth confirmation**, with at most three active at once. This resolves lock-switching behavior; sampling and the concrete creation-draft implementation plan remain to be approved.
+
+## Phase 2O — birth stat draft authorization — 2026-11-15
+
+The user approved the reviewed Phase 2O scope with “yes”: session-owned persistent drafts for the eight base birth attributes, independent uniform integer 1–5 server rolls, unlimited explicit rerolls, up to three freely changeable locks, derived full ×10 resource previews, revision-based retry protection, and tests. This settles the sampling rule. One draft belongs to one live Django database Session; the session key is not exposed, and public IDs do not choose ownership. Draft reads/create retries do not reroll; changed locks and explicit rerolls use fresh revisions, including when chance repeats values.
+
+Migration 0016 creates only the draft table, with no existing-actor/save conversion. Drafts are not permanent Characters and no birth-confirmation endpoint exists yet; final identity/gender/appearance and copying/freeze of selected stats remain future work. Existing sessions with legacy Players are preserved unchanged. Details: [23-birth-stat-drafts.md](23-birth-stat-drafts.md). Commit/push require separate approval.
+
+The user authorized publication of the completed Phase 2O changes with “commit and push to github”. Validation before publication: all 254 tests passed; Django checks and migration drift checks passed.

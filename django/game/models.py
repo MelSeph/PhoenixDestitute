@@ -1,5 +1,6 @@
 
 from decimal import Decimal
+import uuid
 
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
@@ -99,6 +100,44 @@ class Character(models.Model):
 
     def __str__(self):
         return self.name
+
+
+BIRTH_STAT_FIELDS = (
+    "luck", "strength", "defense", "agility", "likeability", "intelligence", "endurance", "baseline_condition",
+)
+
+
+class BirthStatDraft(models.Model):
+    """Unconfirmed session-owned rolls, separate from permanent character stats."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    session = models.OneToOneField("sessions.Session", on_delete=models.CASCADE, related_name="birth_stat_draft")
+    revision = models.UUIDField(default=uuid.uuid4, editable=False)
+    luck = models.PositiveSmallIntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
+    strength = models.PositiveSmallIntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
+    defense = models.PositiveSmallIntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
+    agility = models.PositiveSmallIntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
+    likeability = models.PositiveSmallIntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
+    intelligence = models.PositiveSmallIntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
+    endurance = models.PositiveSmallIntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
+    baseline_condition = models.PositiveSmallIntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
+    locked_stats = models.JSONField(default=list, blank=True)
+
+    class Meta:
+        constraints = [models.CheckConstraint(
+            condition=(models.Q(**{f"{name}__gte": 1 for name in BIRTH_STAT_FIELDS})
+                       & models.Q(**{f"{name}__lte": 5 for name in BIRTH_STAT_FIELDS})),
+            name="birth_draft_stats_between_1_and_5")]
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        super().clean()
+        locks = self.locked_stats
+        if (not isinstance(locks, list) or len(locks) > 3
+                or any(not isinstance(name, str) or name not in BIRTH_STAT_FIELDS for name in locks)):
+            raise ValidationError({"locked_stats": "Choose at most three valid base stat names."})
+        if len(set(locks)) != len(locks):
+            raise ValidationError({"locked_stats": "Stat locks must not contain duplicates."})
 
 
 class Playthrough(models.Model):

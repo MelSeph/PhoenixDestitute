@@ -149,3 +149,11 @@ Do not convert a partial check into a passed check without doing the work.
 - `python manage.py check`: no issues. `python manage.py makemigrations --check --dry-run`: no changes detected. No migration or database update required.
 - Tests cover exact nested and very large fractions, response flags/IDs, incomplete diagnostics, nonthermal enchantments, session/account/method restrictions, ignored foreign-owner query parameters, service conflicts, unsaved new-life isolation, and no gameplay/save writes on repeated GETs.
 - Existing APIs/calculators remain unchanged; the new endpoint is read-only. No weather/scoring, frontend, or `legacy_game/` changes. No commit or push. Details: [21-outfit-thermal-api.md](21-outfit-thermal-api.md).
+
+## Phase 2O — local validation — 2026-11-15
+
+- Full suite: **254 tests passed, none skipped** (228 previous + 26 birth-draft tests), including existing headless Chromium checks.
+- `python manage.py check`: no issues. `python manage.py makemigrations --check --dry-run`: no changes detected.
+- Created backup `django/db.phase2o-backup.sqlite3`, then successfully applied `0016_birth_stat_drafts`. `showmigrations game` confirms 0001–0016 applied. No existing character/save backfill or conversion.
+- Tests cover server draw calls/bounds, derived previews, unlimited rerolls, up to three freely changeable locks, revision/retry protection, transaction rollback, session ownership/expiry/cleanup, constraints, CSRF/account/method/body validation, and unchanged existing actors/saves.
+- The API handles unconfirmed stat drafts only. No final birth, name/gender/appearance, current-Condition/training mechanics, frontend, or `legacy_game/` changes. No commit or push. Details: [23-birth-stat-drafts.md](23-birth-stat-drafts.md).

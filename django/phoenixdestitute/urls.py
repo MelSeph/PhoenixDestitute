@@ -5,6 +5,7 @@ from game import save_api
 from game import inventory_api
 from game import game_settings_api
 from game import thermal_api
+from game import birth_draft_api
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -18,4 +19,7 @@ urlpatterns = [
     path("api/inventory/", inventory_api.inventory_detail, name="api-inventory-detail"),
     path("api/inventory/move/", inventory_api.inventory_move, name="api-inventory-move"),
     path("api/equipment/thermal/", thermal_api.outfit_thermal, name="api-equipment-thermal"),
+    path("api/creation/stats/", birth_draft_api.birth_stats, name="api-birth-stats"),
+    path("api/creation/stats/locks/", birth_draft_api.birth_stat_locks, name="api-birth-stat-locks"),
+    path("api/creation/stats/reroll/", birth_draft_api.birth_stat_reroll, name="api-birth-stat-reroll"),
 ]
