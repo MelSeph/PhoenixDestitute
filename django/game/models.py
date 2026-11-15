@@ -24,6 +24,12 @@ class Player(models.Model):
         null=True,
         blank=True,
     )
+    # Compatibility owner of the continuing story while legacy Player/GameSave APIs remain.
+    # The active Playthrough identifies the current Character; do not duplicate that link here.
+    legacy = models.OneToOneField(
+        "Legacy", on_delete=models.PROTECT, null=True, blank=True,
+        related_name="player",
+    )
     name = models.CharField(max_length=100)
     level = models.PositiveIntegerField(default=1)
     experience = models.PositiveIntegerField(default=0)

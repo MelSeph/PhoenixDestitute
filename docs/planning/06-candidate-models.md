@@ -114,3 +114,11 @@ Authorized as a small implementation milestone: `Legacy`, `Character`, `Playthro
 Validation: Initial playthrough has no predecessor; transitioned playthrough has a predecessor from the same Legacy. Regression and same-person New Life keep Character. Successor New Life changes Character. A conditional unique constraint permits at most one active Playthrough per Legacy. These transitions are *structural modeling*, not implemented death gameplay. Validation uses `full_clean()` and does not automatically run for bare ORM `save()`; constraints at database level are limited to the single-active rule.
 
 **Existing Player / GameSave:** Unchanged, no data backfill. The model bridge from existing Player to Character, and any reassignment of saved state to Playthrough, need a later approved migration. Do not assume new data structures are populated by the existing APIs.
+
+## Phase 2B player integration (2026-11-15)
+
+- `Player.legacy`: nullable OneToOne to Legacy; compatibility bridge, one continuing story per existing Player.
+- An initial Character (`kind=playable`, initial name copied from Player) and initial active Playthrough are created for each preexisting Player by migration `0005`.
+- New anonymous Player API creation provisions the same three records in one transaction. The existing save remains a one-to-one `GameSave.player` JSON document.
+- Player attributes and name remain authoritative to the legacy API; new Character is not yet writable through it. Do not assume per-life saves, regression inventory, or New Life creation is implemented.
+- No direct current-character field is added to Player: derive it from the unique active Playthrough in its Legacy.

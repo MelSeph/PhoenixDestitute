@@ -40,3 +40,7 @@ The user wants planning to continue **with verifiable progress**, and is open to
 ## Phase 2A delivery (2026-11-15)
 
 The user explicitly authorized implementing the three foundational models following design review. This is a narrow exception to the earlier planning-only code boundary: `django/game/models.py`, an additive `0004` migration, and a focused tests module are changed. Existing `Player`, `GameSave`, views, frontend, and `legacy_game/` are preserved. No inventory or death-transition logic is implemented. See `09-decisions-log.md` and `06-candidate-models.md`. Runtime Django tests remain to be executed on the user’s local environment.
+
+## Phase 2B delivery (2026-11-15)
+
+The user authorized integrating existing players with the life foundation. An additive nullable `Player.legacy` one-to-one relationship and migration `0005` backfill existing players into one Legacy, playable Character, and initial Playthrough. New anonymous player creation uses the same foundation. Existing Player/GameSave stats, APIs, and JSON remain authoritative. Transition operations and live save migration are not implemented. Django runtime verification must be performed locally before treating this milestone as complete.

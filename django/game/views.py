@@ -4,6 +4,7 @@ from django.views.decorators.http import require_GET, require_POST
 from django.db import transaction
 from django.views.decorators.csrf import ensure_csrf_cookie
 from .models import Player
+from .life_foundation import create_local_player
 
 
 def index(request):
@@ -49,6 +50,6 @@ def player_create(request):
     if existing:
         return JsonResponse({"player": _serialize(existing)}, status=200)
     with transaction.atomic():
-        player = Player.objects.create(name="Adventurer")
+        player = create_local_player(name="Adventurer")
         request.session["active_player_id"] = str(player.pk)
     return JsonResponse({"player": _serialize(player)}, status=201)

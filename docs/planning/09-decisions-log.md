@@ -31,3 +31,11 @@
 | 2026-11-15 | One active playthrough per Legacy in initial foundation | Single-player lifecycle consistency | More complex parallel branches deferred | Phase 2A working assumption, verify on review |
 
 **Phase 2A implementation boundary:** Only additive models, migration, and tests plus planning text are changed. Existing data is not migrated or backfilled into the new models. `Player` and `GameSave` stay authoritative for the current API. Cross-life memory, crafting progression, inventory, resurrection/regression/new-life operations, and world evolution are NOT implemented by this milestone.
+
+## Phase 2B implementation authorization — 2026-11-15
+
+| Date | Decision | Rationale | Boundary | Approval |
+|---|---|---|---|---|
+| 2026-11-15 | Preserve `Player` and `GameSave`, link each Player to one Legacy, and backfill existing Player records to an initial Character/Playthrough | Existing saves must continue working while the new models become usable | Do not migrate GameSave, change player stats, implement transitions, or edit legacy_game | User: “make it so” after Phase 2B proposal |
+
+**Phase 2B design detail:** `Player.legacy` is a nullable one-to-one compatibility relationship. The active Playthrough identifies the current Character, avoiding a second mutable current-character foreign key on Player. New local players are provisioned atomically; migration `0005` backfills existing rows. Existing direct calls to `Player.objects.create` outside the API are not automatically provisioned; integration of additional creation paths is deferred. `Character.name` is an initial identity snapshot; during compatibility the original Player fields remain authoritative for the old API. Existing GameSave is still one-to-one with Player and cannot independently save multiple lives.
