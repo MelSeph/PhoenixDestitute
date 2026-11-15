@@ -7,8 +7,13 @@ from game import game_settings_api
 from game import thermal_api
 from game import birth_draft_api
 from game import character_api
+from game import account_api
 
 urlpatterns = [
+    path("api/account/", account_api.account_state, name="api-account"),
+    path("api/account/register/", account_api.register, name="api-account-register"),
+    path("api/account/login/", account_api.sign_in, name="api-account-login"),
+    path("api/account/logout/", account_api.sign_out, name="api-account-logout"),
     path("api/characters/", character_api.characters, name="api-characters"),
     path("api/characters/current/", character_api.current, name="api-character-current"),
     path("api/characters/load/", character_api.load, name="api-character-load"),

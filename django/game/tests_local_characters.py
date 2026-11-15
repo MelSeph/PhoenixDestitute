@@ -269,7 +269,7 @@ class LocalCharacterTests(TestCase):
         self.assertEqual(self.delete(entry).status_code, 409)
         self.assertEqual(before, {model.__name__: list(model.objects.values()) for model in [Player, Character, Playthrough, BirthRecord, LocalCharacter]})
 
-    def test_csrf_accounts_methods_and_body_validation(self):
+    def test_csrf_account_roster_access_and_method_body_validation(self):
         protected = Client(enforce_csrf_checks=True)
         for name in ["api-character-load", "api-character-delete", "api-character-new"]:
             self.assertEqual(self.post(name, {}, protected).status_code, 403)
@@ -277,7 +277,9 @@ class LocalCharacterTests(TestCase):
             self.assertEqual(self.post(name, {"session_key": "forged"}).status_code, 400)
             self.assertEqual(self.client.post(reverse(name), "{", content_type="application/json").status_code, 400)
         self.client.force_login(get_user_model().objects.create_user(username="account"))
-        self.assertEqual(self.client.get(reverse("api-characters")).status_code, 403)
-        self.assertEqual(self.client.get(reverse("api-character-current")).status_code, 403)
-        for name in ["api-character-load", "api-character-delete", "api-character-new"]:
-            self.assertEqual(self.post(name, {}).status_code, 403)
+        self.assertEqual(self.client.get(reverse("api-characters")).json()["characters"], [])
+        self.assertEqual(self.client.get(reverse("api-character-current")).status_code, 404)
+        unknown = "00000000-0000-0000-0000-000000000001"
+        self.assertEqual(self.post("api-character-load", {"character_id": unknown}).status_code, 404)
+        self.assertEqual(self.post("api-character-delete", {"character_id": unknown, "confirmation_name": "Unknown"}).status_code, 404)
+        self.assertEqual(self.post("api-character-new", {}).status_code, 200)

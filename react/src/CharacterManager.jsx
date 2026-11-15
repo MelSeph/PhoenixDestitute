@@ -15,6 +15,12 @@ function csrfToken() {
 
 export default function CharacterManager() {
   const [roster, setRoster] = useState(null);
+  const [account, setAccount] = useState(null);
+  const [accountMode, setAccountMode] = useState('login');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [password2, setPassword2] = useState('');
+  const [accountMessage, setAccountMessage] = useState('');
   const [busy, setBusy] = useState(true);
   const [ready, setReady] = useState(false);
   const [message, setMessage] = useState('Loading saved characters…');
@@ -29,7 +35,12 @@ export default function CharacterManager() {
   async function reload(signal) {
     if (pending.current) return;
     pending.current = true; setBusy(true); setReady(false);
-    try { setRoster(await request('/api/characters/', { signal })); setReady(true); setMessage('Saved characters loaded.'); }
+    try {
+      const [characters, accountState] = await Promise.all([
+        request('/api/characters/', { signal }), request('/api/account/', { signal }),
+      ]);
+      setRoster(characters); setAccount(accountState); setReady(true); setMessage('Saved characters loaded.');
+    }
     catch (error) { if (error.name !== 'AbortError') setMessage(`Could not load saved characters: ${error.message}`); }
     finally { pending.current = false; if (!signal?.aborted) setBusy(false); }
   }
@@ -84,12 +95,61 @@ export default function CharacterManager() {
       setMessage(`Could not recover character: ${error.message}`);
     } finally { pending.current = false; setBusy(false); }
   }
+  async function accountAction(event) {
+    event?.preventDefault();
+    if (pending.current || childState.busy || !ready || !mayLeave()) return;
+    pending.current = true; setBusy(true); setReady(false); setAccountMessage('');
+    try {
+      if (!csrfToken()) {
+        const response = await fetch('/prototype/', { credentials: 'same-origin' });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      }
+      if (!csrfToken()) throw new Error('Cookies are required for player accounts.');
+      const logoutAction = account?.authenticated;
+      const action = logoutAction ? 'logout' : accountMode;
+      const body = logoutAction ? {} : action === 'register' ? { username, password1: password, password2 } : { username, password };
+      const result = await request(`/api/account/${action}/`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken() }, body: JSON.stringify(body),
+      });
+      const characters = await request('/api/characters/');
+      setAccount(result); setRoster(characters); setPassword(''); setPassword2('');
+      setViewKey(key => key + 1); setChildState({ busy: false, dirty: false }); setReady(true);
+      setMessage(result.authenticated ? 'Your account characters are ready in this browser.' : 'Signed out.');
+    } catch (error) {
+      setAccountMessage(error.message);
+    } finally { pending.current = false; setBusy(false); }
+  }
   const locked = busy || !ready || childState.busy;
   const current = roster?.current;
   return <>
     <section className="panel" aria-labelledby="characters-heading">
       <h2 id="characters-heading">Your characters</h2>
-      <p className="help">Saved characters belong to this browser session. New character keeps your other stories available to load.</p>
+      <section aria-labelledby="account-heading">
+        <h3 id="account-heading">Player account</h3>
+        {account?.authenticated ? <>
+          <p>Signed in as <strong>{account.username}</strong>. Your saved characters are linked to your account.</p>
+          <button className="secondary" disabled={busy || childState.busy} onClick={() => accountAction()}>Sign out</button>
+        </> : <>
+          <div className="actions" aria-label="Account actions">
+            <button type="button" className={accountMode === 'login' ? '' : 'secondary'} disabled={locked} onClick={() => { setAccountMode('login'); setAccountMessage(''); }}>Use existing account</button>
+            <button type="button" className={accountMode === 'register' ? '' : 'secondary'} disabled={locked} onClick={() => { setAccountMode('register'); setAccountMessage(''); }}>Create new account</button>
+          </div>
+          <form className="account-form" onSubmit={accountAction}>
+            <label htmlFor="account-username">Username</label>
+            <input id="account-username" autoComplete="username" value={username} onChange={event => setUsername(event.target.value)} required />
+            <label htmlFor="account-password">Password</label>
+            <input id="account-password" type="password" autoComplete={accountMode === 'login' ? 'current-password' : 'new-password'} value={password} onChange={event => setPassword(event.target.value)} required />
+            {accountMode === 'register' && <>
+              <p className="help">Use at least 10 characters; avoid common or numeric-only passwords.</p>
+              <label htmlFor="account-password-confirm">Confirm password</label>
+              <input id="account-password-confirm" type="password" autoComplete="new-password" value={password2} onChange={event => setPassword2(event.target.value)} required />
+            </>}
+            <button disabled={locked}>{accountMode === 'login' ? 'Sign in' : 'Create account'}</button>
+          </form>
+          {accountMessage && <p role="alert">{accountMessage}</p>}
+        </>}
+      </section>
+      <p className="help">{account?.authenticated ? 'Your account characters are available when you sign in on another browser.' : 'Saved characters currently belong to this browser session. Sign in or create an account to sync them across browsers.'} New character keeps your other stories available to load.</p>
       <p role="status">{message}</p>
       {roster?.characters.length === 0 && <p>No saved characters yet.</p>}
       <ul className="character-list">{roster?.characters.map(entry => <li key={entry.id}>

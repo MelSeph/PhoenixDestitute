@@ -129,10 +129,10 @@ class ThermalApiTests(TestCase):
         self.assertEqual(separate["playthrough_id"], other_life.pk)
         self.assertEqual(separate["regions"], [])
 
-    def test_authenticated_account_access_remains_unsupported(self):
+    def test_authenticated_account_without_selected_character_gets_no_foreign_thermal_data(self):
         user = get_user_model().objects.create_user(username="account")
         self.client.force_login(user)
-        self.assertEqual(self.client.get(self.url).status_code, 403)
+        self.assertEqual(self.client.get(self.url).status_code, 404)
 
     def test_only_get_is_supported(self):
         for method in [self.client.post, self.client.put, self.client.patch, self.client.delete]:

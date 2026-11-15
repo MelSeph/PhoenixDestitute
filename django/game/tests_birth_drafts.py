@@ -283,13 +283,16 @@ class BirthDraftApiTests(TestCase):
         self.assertEqual(self.client.get(self.locks_url).status_code, 405)
         self.assertEqual(self.client.get(self.reroll_url).status_code, 405)
 
-    def test_authenticated_account_drafts_are_not_implemented(self):
+    def test_authenticated_account_can_create_and_change_its_own_draft(self):
         self.client.force_login(get_user_model().objects.create_user(username="draft-account"))
-        self.assertEqual(self.client.get(self.url).status_code, 403)
-        self.assertEqual(self.post(self.url, {}).status_code, 403)
-        self.assertEqual(self.post(self.locks_url, {"revision": "x", "locked_stats": []}).status_code, 403)
-        self.assertEqual(self.post(self.reroll_url, {"revision": "x"}).status_code, 403)
-        self.assertFalse(BirthStatDraft.objects.exists())
+        self.assertEqual(self.client.get(self.url).status_code, 404)
+        created = self.post(self.url, {})
+        self.assertEqual(created.status_code, 201)
+        draft = created.json()["draft"]
+        saved = self.post(self.locks_url, {"revision": draft["revision"], "locked_stats": ["luck"]})
+        self.assertEqual(saved.status_code, 200, saved.content)
+        self.assertEqual(BirthStatDraft.objects.get().account.username, "draft-account")
+        self.assertIsNone(BirthStatDraft.objects.get().session_id)
 
     def test_expired_cookie_cannot_recover_old_draft_and_explicit_create_starts_new_session(self):
         original = self.create()

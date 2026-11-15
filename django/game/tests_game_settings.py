@@ -69,11 +69,11 @@ class GameSettingsTests(TestCase):
                                HTTP_X_CSRFTOKEN=client.cookies["csrftoken"].value)
         self.assertEqual(response.status_code, 200)
 
-    def test_account_access_is_not_silently_assigned_local_preferences(self):
+    def test_account_without_a_selected_character_cannot_access_another_players_preference(self):
         user = get_user_model().objects.create_user(username="account-user")
         self.client.force_login(user)
-        self.assertEqual(self.client.get(self.url).status_code, 403)
-        self.assertEqual(self.update({"auto_adapt_equipment": True}).status_code, 403)
+        self.assertEqual(self.client.get(self.url).status_code, 404)
+        self.assertEqual(self.update({"auto_adapt_equipment": True}).status_code, 404)
         self.assertFalse(PlayerGameSettings.objects.exists())
 
     def test_preference_survives_regression(self):

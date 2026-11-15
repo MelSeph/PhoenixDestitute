@@ -3,7 +3,7 @@ from django.shortcuts import render
 from django.views.decorators.http import require_GET, require_POST
 from django.db import transaction
 from django.views.decorators.csrf import ensure_csrf_cookie
-from .models import Player
+from .models import LocalCharacter, Player
 from .life_foundation import create_local_player
 
 
@@ -18,15 +18,23 @@ def prototype(request):
 
 
 def _session_player(request):
-    """Only the session's anonymous local character, never an arbitrary browser-supplied ID."""
+    """Only the active character owned by this session or authenticated account."""
     identifier = request.session.get("active_player_id")
     if not identifier:
         return None
     try:
-        player = Player.objects.get(pk=identifier, account__isnull=True)
+        if request.user.is_authenticated:
+            player = Player.objects.get(pk=identifier, account=request.user)
+        else:
+            player = Player.objects.get(pk=identifier, account__isnull=True)
         from .models import LocalCharacter
         ownership = LocalCharacter.objects.filter(player=player).first()
-        if ownership and (ownership.deleted_at is not None or ownership.session_id != request.session.session_key):
+        if request.user.is_authenticated and (ownership is None or ownership.account_id != request.user.pk):
+            request.session.pop("active_player_id", None)
+            return None
+        if ownership and (ownership.deleted_at is not None
+                or (request.user.is_authenticated and ownership.account_id != request.user.pk)
+                or (not request.user.is_authenticated and ownership.session_id != request.session.session_key)):
             request.session.pop("active_player_id", None)
             return None
         return player
@@ -56,7 +64,10 @@ def player_create(request):
     existing = _session_player(request)
     if existing:
         return JsonResponse({"player": _serialize(existing)}, status=200)
+    if request.session.session_key is None:
+        request.session.create()
     with transaction.atomic():
         player = create_local_player(name="Adventurer")
+        LocalCharacter.objects.create(session_id=request.session.session_key, player=player)
         request.session["active_player_id"] = str(player.pk)
     return JsonResponse({"player": _serialize(player)}, status=201)

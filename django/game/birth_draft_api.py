@@ -10,10 +10,9 @@ from .birth_drafts import (create_birth_stat_draft, read_birth_stat_draft,
 from .models import BirthStatDraft
 
 
-def _account_error(request):
-    if request.user.is_authenticated:
-        return JsonResponse({"error": "Account creation drafts are not implemented."}, status=403)
-    return None
+def _owner(request):
+    return {"session_key": request.session.session_key,
+            "account_id": request.user.pk if request.user.is_authenticated else None}
 
 
 def _body(request, fields):
@@ -32,9 +31,6 @@ def _missing():
 
 @require_http_methods(["GET", "POST"])
 def birth_stats(request):
-    error = _account_error(request)
-    if error is not None:
-        return error
     created = False
     if request.method == "POST":
         _, error = _body(request, set())
@@ -46,9 +42,9 @@ def birth_stats(request):
             request.session.create()
     try:
         if request.method == "POST":
-            draft, created = create_birth_stat_draft(session_key=request.session.session_key)
+            draft, created = create_birth_stat_draft(**_owner(request))
         else:
-            draft = read_birth_stat_draft(session_key=request.session.session_key)
+            draft = read_birth_stat_draft(**_owner(request))
     except BirthStatDraft.DoesNotExist:
         return _missing()
     except ValidationError as exc:
@@ -58,14 +54,11 @@ def birth_stats(request):
 
 @require_POST
 def birth_stat_locks(request):
-    error = _account_error(request)
-    if error is not None:
-        return error
     data, error = _body(request, {"revision", "locked_stats"})
     if error is not None:
         return error
     try:
-        draft = set_birth_stat_locks(session_key=request.session.session_key, **data)
+        draft = set_birth_stat_locks(**_owner(request), **data)
     except BirthStatDraft.DoesNotExist:
         return _missing()
     except ValidationError as exc:
@@ -75,14 +68,11 @@ def birth_stat_locks(request):
 
 @require_POST
 def birth_stat_reroll(request):
-    error = _account_error(request)
-    if error is not None:
-        return error
     data, error = _body(request, {"revision"})
     if error is not None:
         return error
     try:
-        draft = reroll_birth_stat_draft(session_key=request.session.session_key, **data)
+        draft = reroll_birth_stat_draft(**_owner(request), **data)
     except BirthStatDraft.DoesNotExist:
         return _missing()
     except ValidationError as exc:
@@ -92,14 +82,11 @@ def birth_stat_reroll(request):
 
 @require_POST
 def birth_identity(request):
-    error = _account_error(request)
-    if error is not None:
-        return error
     data, error = _body(request, {"revision", "identity"})
     if error is not None:
         return error
     try:
-        draft = set_birth_identity(session_key=request.session.session_key, **data)
+        draft = set_birth_identity(**_owner(request), **data)
     except BirthStatDraft.DoesNotExist:
         return _missing()
     except ValidationError as exc:
@@ -109,14 +96,11 @@ def birth_identity(request):
 
 @require_POST
 def birth_confirm(request):
-    error = _account_error(request)
-    if error is not None:
-        return error
     data, error = _body(request, {"revision"})
     if error is not None:
         return error
     try:
-        draft, created = confirm_birth(session_key=request.session.session_key, **data)
+        draft, created = confirm_birth(**_owner(request), **data)
     except BirthStatDraft.DoesNotExist:
         return _missing()
     except ValidationError as exc:

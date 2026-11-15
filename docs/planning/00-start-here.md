@@ -12,6 +12,8 @@
 
 **Orphan recovery:** The user clarified that orphaned characters should be reclaimable in a new browser through an admin-level action. Admin can issue a one-use, 24-hour code for one selected orphan; the game accepts the code and adds the existing save to that browser's roster. The working DB currently contains two unrostered Players with birth records. See [31-orphaned-character-recovery.md](31-orphaned-character-recovery.md). Migration 0019 is additive; local migration will be backed up and checked. No commit/push requested.
 
+**Player accounts and reset:** The user approved username/password accounts with current-session ownership transfer and admin-code recovery, plus erasing local game/story data while keeping the Django superuser and shared catalogs. See [32-player-accounts-and-game-data-reset.md](32-player-accounts-and-game-data-reset.md). Migrations 0020–0021 add account ownership and enforce one owner per row. The local data reset and post-reset verification are part of this work. No commit/push requested.
+
 The equipment-adaptation preference is now persisted through a session-scoped API, defaulting to player-controlled timing: [15-game-settings.md](15-game-settings.md). Migration 0010 is applied locally and the full suite has 113 passing tests. Automatic adaptation/scoring remains unimplemented; the preference alone does not change gear.
 
 ## Read next

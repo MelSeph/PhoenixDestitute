@@ -12,12 +12,10 @@ from .views import _session_player
 
 
 def _local_player(request):
-    # Account-based access is not implemented. Never trust a client-supplied ID.
-    if request.user.is_authenticated:
-        return None, JsonResponse({"error": "Account save access is not implemented."}, status=403)
+    # The session's active ID is checked against the authenticated owner below.
     player = _session_player(request)
     if player is None:
-        return None, JsonResponse({"error": "No local character in this session."}, status=404)
+        return None, JsonResponse({"error": "No character is selected in this browser."}, status=404)
     return player, None
 
 

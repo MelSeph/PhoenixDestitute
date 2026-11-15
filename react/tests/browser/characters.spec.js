@@ -56,6 +56,7 @@ test('deleting an inactive character keeps the loaded character available', asyn
   await page.getByRole('button', { name: 'Load Ember', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Ember · Newborn', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Delete Ash', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: 'Delete Ash?' })).toBeVisible();
   await page.getByLabel('Type Ash to delete', { exact: true }).fill('Ash');
   await page.getByRole('button', { name: 'Delete character', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Load Ash', exact: true })).not.toBeVisible();
@@ -146,4 +147,24 @@ test('recovery code adds a saved character to the current browser roster', async
   await page.getByRole('button', { name: 'Recover character', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Load Jo', exact: true })).toBeVisible();
   await expect(page.getByText('Jo was added to this browser. Choose Load to open the character.', { exact: true })).toBeVisible();
+});
+
+test('registration transfers the current character and signing in elsewhere loads it', async ({ page, browser }) => {
+  await page.goto('/'); await create(page, 'Across Worlds');
+  await page.getByRole('button', { name: 'Create new account', exact: true }).click();
+  await page.getByLabel('Username', { exact: true }).fill('cross-browser-user');
+  await page.getByLabel('Password', { exact: true }).fill('A-Secure-Player-Password-938!');
+  await page.getByLabel('Confirm password', { exact: true }).fill('A-Secure-Player-Password-938!');
+  await page.getByRole('button', { name: 'Create account', exact: true }).click();
+  await expect(page.getByText('Signed in as', { exact: false })).toContainText('cross-browser-user');
+  await expect(page.getByRole('button', { name: 'Load Across Worlds', exact: true })).toBeVisible();
+
+  const second = await browser.newPage();
+  await second.goto('/');
+  await second.getByLabel('Username', { exact: true }).fill('cross-browser-user');
+  await second.getByLabel('Password', { exact: true }).fill('A-Secure-Player-Password-938!');
+  await second.getByRole('button', { name: 'Sign in', exact: true }).click();
+  await expect(second.getByRole('button', { name: 'Load Across Worlds', exact: true })).toBeVisible();
+  await second.getByRole('button', { name: 'Load Across Worlds', exact: true }).click();
+  await expect(second.getByRole('heading', { name: 'Across Worlds · Newborn', exact: true })).toBeVisible();
 });

@@ -28,7 +28,7 @@ def issue_recovery_code(*, player_id):
 
 
 @transaction.atomic
-def redeem_recovery_code(*, session_key, code):
+def redeem_recovery_code(*, session_key, code, account_id=None):
     if not isinstance(code, str) or not code or len(code) > 100:
         raise ValidationError("Recovery code is invalid, expired, or already used.")
     digest = hashlib.sha256(code.encode("utf-8")).hexdigest()
@@ -39,11 +39,15 @@ def redeem_recovery_code(*, session_key, code):
     if code is None or LocalCharacter.objects.filter(player=code.player).exists():
         raise ValidationError("Recovery code is invalid, expired, or already used.")
     from .local_characters import _name, _payload, _session
+    from django.contrib.auth import get_user_model
 
     session = _session(session_key)
-    entry = LocalCharacter.objects.create(session=session, player=code.player)
+    account = get_user_model().objects.get(pk=account_id) if account_id else None
+    entry = LocalCharacter.objects.create(session=None if account else session, account=account, player=code.player)
+    if account:
+        Player.objects.filter(pk=code.player_id, account__isnull=True).update(account=account)
     code.redeemed_at = timezone.now()
     code.save(update_fields=["redeemed_at"])
-    payload = _payload(session)
+    payload = _payload(session, account_id)
     payload["recovered"] = {"id": str(entry.pk), "name": _name(entry)}
     return payload

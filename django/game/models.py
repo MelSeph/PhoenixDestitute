@@ -47,10 +47,19 @@ class LocalCharacter(models.Model):
     """A session-owned saved story; explicit deletion permanently purges its data."""
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    session = models.ForeignKey("sessions.Session", on_delete=models.CASCADE, related_name="local_characters")
+    session = models.ForeignKey("sessions.Session", on_delete=models.CASCADE, related_name="local_characters",
+                                null=True, blank=True)
+    account = models.ForeignKey("auth.User", on_delete=models.CASCADE, related_name="local_game_characters",
+                                null=True, blank=True)
     player = models.OneToOneField(Player, on_delete=models.PROTECT, related_name="local_character")
     created_at = models.DateTimeField(auto_now_add=True)
     deleted_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        constraints = [models.CheckConstraint(
+            condition=(models.Q(session__isnull=False, account__isnull=True)
+                       | models.Q(session__isnull=True, account__isnull=False)),
+            name="local_character_has_one_owner")]
 
 
 class CharacterRecoveryCode(models.Model):
@@ -131,7 +140,10 @@ class BirthStatDraft(models.Model):
     """Unconfirmed session-owned rolls, separate from permanent character stats."""
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    session = models.OneToOneField("sessions.Session", on_delete=models.CASCADE, related_name="birth_stat_draft")
+    session = models.OneToOneField("sessions.Session", on_delete=models.CASCADE, related_name="birth_stat_draft",
+                                   null=True, blank=True)
+    account = models.OneToOneField("auth.User", on_delete=models.CASCADE, related_name="birth_stat_draft",
+                                   null=True, blank=True)
     revision = models.UUIDField(default=uuid.uuid4, editable=False)
     luck = models.PositiveSmallIntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
     strength = models.PositiveSmallIntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
@@ -145,10 +157,16 @@ class BirthStatDraft(models.Model):
     identity = models.JSONField(default=dict, blank=True)
 
     class Meta:
-        constraints = [models.CheckConstraint(
-            condition=(models.Q(**{f"{name}__gte": 1 for name in BIRTH_STAT_FIELDS})
-                       & models.Q(**{f"{name}__lte": 5 for name in BIRTH_STAT_FIELDS})),
-            name="birth_draft_stats_between_1_and_5")]
+        constraints = [
+            models.CheckConstraint(
+                condition=(models.Q(**{f"{name}__gte": 1 for name in BIRTH_STAT_FIELDS})
+                           & models.Q(**{f"{name}__lte": 5 for name in BIRTH_STAT_FIELDS})),
+                name="birth_draft_stats_between_1_and_5"),
+            models.CheckConstraint(
+                condition=(models.Q(session__isnull=False, account__isnull=True)
+                           | models.Q(session__isnull=True, account__isnull=False)),
+                name="birth_draft_has_one_owner"),
+        ]
 
     def clean(self):
         from django.core.exceptions import ValidationError

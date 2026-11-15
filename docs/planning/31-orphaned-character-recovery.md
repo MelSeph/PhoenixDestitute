@@ -6,9 +6,9 @@ The user clarified that recovery should be an admin-level operation, so already-
 
 1. A staff member opens **Players** in Django admin and selects exactly one intended orphaned player.
 2. The **Issue one-use recovery code** action creates a cryptographically random code that expires after 24 hours. Issuing a new code revokes that player's other unredeemed codes. The raw code is shown once in the admin success message; only its SHA-256 digest is stored. The recovery-code model itself is read-only.
-3. In the target browser, open **Recover a saved character** in the React character list and submit the code. The API adds the existing Player to that browser's `LocalCharacter` roster inside a transaction, consumes the code, and returns the updated roster. The player can then use Load. It does not create or copy a birth, life, save, inventory, or character record.
+3. In the target browser, open **Recover a saved character** in the React character list and submit the code. The API adds the existing Player to that browser's roster inside a transaction, consumes the code, and returns the updated roster. If signed in, it attaches the Player and roster to that account so the character is available on other signed-in browsers. It does not create or copy a birth, life, save, inventory, or character record.
 
-Invalid, expired, redeemed, account-owned, or already-rostered saves all return the same conflict response. Recovery codes are bearer credentials: anyone who obtains one before redemption can claim that particular save. Issuance and redemption are CSRF-protected; ordinary game requests cannot enumerate orphaned players. The action requires existing Django staff access and does not create or alter accounts/passwords.
+Invalid, expired, redeemed, account-owned, or already-rostered saves all return the same conflict response. Recovery codes are bearer credentials: anyone who obtains one before redemption can claim that particular save. Issuance and redemption are CSRF-protected; ordinary game requests cannot enumerate orphaned players. Issuance requires an existing Django superuser; it does not create or alter accounts/passwords.
 
 ## Implementation and verification
 

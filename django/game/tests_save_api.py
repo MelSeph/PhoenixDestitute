@@ -80,12 +80,12 @@ class GameSaveApiTests(TestCase):
         self.assertEqual(secured.post(self.save_url, data='{"x":1}', content_type="application/json").status_code, 403)
         self.assertEqual(secured.post(self.save_url, data='{"x":1}', content_type="application/json", HTTP_X_CSRFTOKEN=token).status_code, 200)
 
-    def test_authenticated_account_save_not_implemented(self):
+    def test_authenticated_account_without_selected_character_cannot_save_another_player(self):
         from django.contrib.auth import get_user_model
         user = get_user_model().objects.create_user(username="registered", password="secret-pass-123")
         self.client.force_login(user)
-        self.assertEqual(self.client.get(self.load_url).status_code, 403)
-        self.assertEqual(self.post_save({"x": 1}).status_code, 403)
+        self.assertEqual(self.client.get(self.load_url).status_code, 404)
+        self.assertEqual(self.post_save({"x": 1}).status_code, 404)
 
     def test_unprovisioned_player_rejected(self):
         self.provision()

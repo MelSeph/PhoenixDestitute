@@ -4,7 +4,6 @@ import json
 from datetime import timedelta
 from unittest.mock import patch
 
-from django.contrib.auth import get_user_model
 from django.contrib.sessions.models import Session
 from django.core.exceptions import ValidationError
 from django.test import Client, TestCase
@@ -222,13 +221,20 @@ class BirthConfirmationTests(TestCase):
         self.assertEqual(self.confirm().status_code, 404)
         self.assertFalse(Player.objects.exists())
 
-    def test_csrf_and_account_guards_cover_both_new_endpoints(self):
+    def test_csrf_protects_confirmation_and_account_can_complete_a_birth(self):
         protected = Client(enforce_csrf_checks=True)
         self.assertEqual(self.post(self.identity_url, {}, protected).status_code, 403)
         self.assertEqual(self.post(self.confirm_url, {}, protected).status_code, 403)
-        self.client.force_login(get_user_model().objects.create_user(username="birth-account"))
-        for url in [self.identity_url, self.confirm_url]:
-            self.assertEqual(self.post(url, {}).status_code, 403)
+        password = "A-Secure-Player-Password-938!"
+        response = self.post(reverse("api-account-register"), {
+            "username": "birth-account", "password1": password, "password2": password,
+        })
+        self.assertEqual(response.status_code, 200, response.content)
+        updated = self.post(self.identity_url, {"revision": self.draft["revision"], "identity": identity()})
+        self.assertEqual(updated.status_code, 200, updated.content)
+        confirmed = self.post(self.confirm_url, {"revision": updated.json()["draft"]["revision"]})
+        self.assertEqual(confirmed.status_code, 201, confirmed.content)
+        self.assertEqual(Player.objects.get().account.username, "birth-account")
 
     def test_new_endpoints_reject_extra_forged_fields_malformed_json_and_wrong_methods(self):
         for url in [self.identity_url, self.confirm_url]:

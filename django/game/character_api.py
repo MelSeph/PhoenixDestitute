@@ -11,17 +11,16 @@ from .models import LocalCharacter
 
 
 def _respond(request, operation, fields=None):
-    if request.user.is_authenticated:
-        return JsonResponse({"error": "Account character management is not implemented."}, status=403)
     data = {}
     if fields is not None:
         data, error = _body(request, fields)
         if error is not None:
             return error
-        if operation in (local_characters.new_character, redeem_recovery_code) and request.session.session_key is None:
+        if not request.user.is_authenticated and operation in (local_characters.new_character, redeem_recovery_code) and request.session.session_key is None:
             request.session.create()
     try:
-        payload = operation(session_key=request.session.session_key, **data)
+        payload = operation(session_key=request.session.session_key,
+                            account_id=request.user.pk if request.user.is_authenticated else None, **data)
     except LocalCharacter.DoesNotExist:
         return JsonResponse({"error": "No available character in this session."}, status=404)
     except ValidationError as exc:

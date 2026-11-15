@@ -20,25 +20,30 @@ def _session(key):
     return session
 
 
-def _adopt_active(session):
-    """Adopt only the trusted active ID in an existing anonymous session."""
+def _adopt_active(session, account_id=None):
+    """Adopt only an active character already owned by this request's owner."""
     identifier = session.get_decoded().get("active_player_id")
     try:
-        player = Player.objects.filter(pk=identifier, account__isnull=True).first() if identifier else None
+        query = Player.objects.filter(pk=identifier, account_id=account_id) if account_id else Player.objects.filter(pk=identifier, account__isnull=True)
+        player = query.first() if identifier else None
     except (TypeError, ValueError, OverflowError):
         player = None
     if player is not None:
         # A player already owned elsewhere or deleted is never reassigned/revived.
-        LocalCharacter.objects.get_or_create(player=player, defaults={"session": session})
+        defaults = {"account_id": account_id} if account_id else {"session": session}
+        LocalCharacter.objects.get_or_create(player=player, defaults=defaults)
 
 
-def _entry(session, identifier, *, include_deleted=False):
+def _entry(session, identifier, *, account_id=None, include_deleted=False):
     try:
         identifier = uuid.UUID(identifier) if isinstance(identifier, str) else None
     except ValueError:
         identifier = None
-    query = LocalCharacter.objects.select_for_update().select_related("player").filter(
-        pk=identifier, session=session, player__account__isnull=True)
+    query = LocalCharacter.objects.select_for_update().select_related("player").filter(pk=identifier)
+    if account_id:
+        query = query.filter(account_id=account_id, player__account_id=account_id)
+    else:
+        query = query.filter(session=session, account__isnull=True, player__account__isnull=True)
     if not include_deleted:
         query = query.filter(deleted_at__isnull=True)
     return query.get()
@@ -63,10 +68,14 @@ def _current(entry):
             "level": entry.player.level, "experience": entry.player.experience}
 
 
-def _payload(session):
+def _payload(session, account_id=None):
     data = session.get_decoded()
-    entries = list(LocalCharacter.objects.select_related("player").filter(session=session, deleted_at__isnull=True,
-                        player__account__isnull=True).order_by("created_at", "id"))
+    query = LocalCharacter.objects.select_related("player").filter(deleted_at__isnull=True)
+    if account_id:
+        query = query.filter(account_id=account_id, player__account_id=account_id)
+    else:
+        query = query.filter(session=session, account__isnull=True, player__account__isnull=True)
+    entries = list(query.order_by("created_at", "id"))
     active = next((entry for entry in entries if str(entry.player_id) == str(data.get("active_player_id"))), None)
     summaries = []
     for entry in entries:
@@ -89,58 +98,59 @@ def _activate(session, player_id, *, screen):
 
 
 @transaction.atomic
-def list_characters(*, session_key):
+def list_characters(*, session_key, account_id=None):
     try:
         session = _session(session_key)
     except LocalCharacter.DoesNotExist:
         return {"success": True, "characters": [], "current": None}
-    _adopt_active(session)
-    return _payload(session)
+    _adopt_active(session, account_id)
+    return _payload(session, account_id)
 
 
 @transaction.atomic
-def load_character(*, session_key, character_id):
+def load_character(*, session_key, character_id, account_id=None):
     session = _session(session_key)
-    _adopt_active(session)
-    entry = _entry(session, character_id)
+    _adopt_active(session, account_id)
+    entry = _entry(session, character_id, account_id=account_id)
     _activate(session, entry.player_id, screen="loaded")
-    return _payload(session)
+    return _payload(session, account_id)
 
 
 @transaction.atomic
-def current_character(*, session_key):
+def current_character(*, session_key, account_id=None):
     session = _session(session_key)
-    _adopt_active(session)
-    payload = _payload(session)
+    _adopt_active(session, account_id)
+    payload = _payload(session, account_id)
     if payload["current"] is None:
         raise LocalCharacter.DoesNotExist
     return {"success": True, "draft": payload["current"].get("draft"), "character": payload["current"]}
 
 
 @transaction.atomic
-def new_character(*, session_key):
+def new_character(*, session_key, account_id=None):
     session = _session(session_key)
-    _adopt_active(session)
-    draft = BirthStatDraft.objects.select_for_update().filter(session=session).first()
+    _adopt_active(session, account_id)
+    owner = {"account_id": account_id} if account_id else {"session": session}
+    draft = BirthStatDraft.objects.select_for_update().filter(**owner).first()
     # A confirmed birth is retained permanently; removing its temporary draft
     # makes room for another. An unfinished draft is resumed, never discarded.
     if draft and BirthRecord.objects.filter(source_draft_id=draft.pk).exists():
         draft.delete()
     _activate(session, None, screen="creation")
-    return _payload(session)
+    return _payload(session, account_id)
 
 
 @transaction.atomic
-def delete_character(*, session_key, character_id, confirmation_name):
+def delete_character(*, session_key, character_id, confirmation_name, account_id=None):
     session = _session(session_key)
-    _adopt_active(session)
-    entry = _entry(session, character_id, include_deleted=True)
+    _adopt_active(session, account_id)
+    entry = _entry(session, character_id, account_id=account_id, include_deleted=True)
     if not isinstance(confirmation_name, str) or confirmation_name != _name(entry):
         raise ValidationError("Type the character's name exactly to delete it.")
     source_ids = BirthRecord.objects.filter(playthrough__legacy_id=entry.player.legacy_id).values_list("source_draft_id", flat=True)
-    BirthStatDraft.objects.filter(session=session, pk__in=source_ids).delete()
+    BirthStatDraft.objects.filter(**({"account_id": account_id} if account_id else {"session": session}), pk__in=source_ids).delete()
     if str(session.get_decoded().get("active_player_id")) == str(entry.player_id):
-        draft = BirthStatDraft.objects.select_for_update().filter(session=session).first()
+        draft = BirthStatDraft.objects.select_for_update().filter(**({"account_id": account_id} if account_id else {"session": session})).first()
         if draft and BirthRecord.objects.filter(source_draft_id=draft.pk).exists():
             draft.delete()
         _activate(session, None, screen="creation")
@@ -166,4 +176,4 @@ def delete_character(*, session_key, character_id, confirmation_name):
             Legacy.objects.filter(pk=legacy_id).delete()
     except ProtectedError as exc:
         raise ValidationError("This story has protected references outside its ownership. Nothing was deleted.") from exc
-    return _payload(session)
+    return _payload(session, account_id)

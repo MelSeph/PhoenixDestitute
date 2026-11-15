@@ -127,7 +127,9 @@ class SessionOwnerAdmin(ReadOnlyAdmin):
     @admin.display(description="Browser session")
     def owner_session(self, obj):
         # Session keys are credentials, not ordinary identifiers for a viewer.
-        return f"Session …{obj.session_id[-8:]}"
+        if obj.account_id:
+            return f"Account {obj.account.get_username()}"
+        return f"Session …{obj.session_id[-8:]}" if obj.session_id else "No browser owner"
 
     def get_readonly_fields(self, request, obj=None):
         return super().get_readonly_fields(request, obj) + ("owner_session",)

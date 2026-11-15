@@ -9,11 +9,11 @@ from .models import Character, Legacy, Player, Playthrough
 
 
 @transaction.atomic
-def create_local_player(*, name):
+def create_local_player(*, name, account=None):
     """Create one Player with one Legacy, playable Character, and initial life."""
     legacy = Legacy.objects.create()
     character = Character.objects.create(name=name, kind=Character.Kind.PLAYABLE)
-    player = Player.objects.create(name=name, legacy=legacy)
+    player = Player.objects.create(name=name, legacy=legacy, account=account)
     Playthrough.objects.create(
         legacy=legacy,
         character=character,

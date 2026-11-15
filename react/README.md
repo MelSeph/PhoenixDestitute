@@ -72,11 +72,15 @@ Only one draft request can run at a time. Changed-lock/reroll writes send the la
 4. `src/ColorPicker.jsx` and `src/Dialog.jsx` handle temporary color selection and accessible modal behavior.
 5. `src/BirthCreationPanel.jsx` reads/updates the session-owned draft and coordinates final review/confirmation. `src/BirthAppearance.jsx` renders the identity form, swatches/iris visuals, SVG length illustrations, and saved appearance summaries. Django owns presets, validation, rolls, resources, revisions, and permanent confirmation. Birth data never enters appearance backups/localStorage.
 6. `src/styles.css` retains the prototype's visual language with responsive controls and reduced-motion support.
-7. `src/CharacterManager.jsx` coordinates the saved-character list, selection, new creation, deletion, and unsaved-edit/pending-request guards. `/api/characters/` and its `current/`, `load/`, `new/`, and `delete/` routes enforce ownership in Django.
+7. `src/CharacterManager.jsx` coordinates player account access, the saved-character list, selection, new creation, deletion, and unsaved-edit/pending-request guards. `/api/account/` handles account state/actions; `/api/characters/` and its `current/`, `load/`, `new/`, `delete/`, and `recover/` routes enforce ownership in Django.
 
 ### Recovering an orphaned character
 
-In Django admin, open **Players**, select exactly one unrostered player, choose **Issue one-use recovery code for one orphaned character**, and click **Go**. Copy the code from the one-time admin message. In the target browser, open **Recover a saved character** in the character list and submit it. The code expires after 24 hours; issuing another code for that player invalidates earlier unused codes. The character is added to the roster and can then be loaded. The raw code is not stored in the database.
+In Django admin, open **Players**, select exactly one unrostered player, choose **Issue one-use recovery code for one orphaned character**, and click **Go**. A superuser must perform this action. Copy the code from the one-time admin message. In the target browser, open **Recover a saved character** in the character list and submit it. If signed in, the recovered character is attached to the account; otherwise it belongs to that browser. The code expires after 24 hours; issuing another code for that player invalidates earlier unused codes. The raw code is not stored in the database.
+
+### Player accounts
+
+Use **Player account** above the character list to create a username/password account or sign in. Registration/sign-in moves characters and an unfinished creation draft owned by that browser to the account before Django rotates its session key. Other signed-in browsers can then see the same account roster, load a character, and continue its server-side saves. Each browser's active character selection remains independent. Sign out keeps account-owned characters and drafts on the account. Password reset/email verification are not configured yet.
 
 ## Verify
 
@@ -90,6 +94,6 @@ Browser tests use installed Microsoft Edge by default. For another environment, 
 
 Browser tests require ports 8000 and 5173 to be free. They start Django using `tests/django_server.py` with a freshly migrated temporary database, plus Vite. They do not use or modify `django/db.sqlite3`. Live integration checks cover birth drafts/identity/visuals, locks/rerolls/resources, final review/confirmation, retries/lost responses, real CSRF/session behavior, and protection of older characters. Other scenarios mock API responses. Servers stop at the end of the test run. Screenshots and failure artifacts go in ignored `test-results/`.
 
-Verified: 6 settings tests, 29 browser tests, production build, and all 296 Django tests. Node 24.22.3, React 19.3.1, Vite 7.3.8; exact dependencies are locked in `package-lock.json`.
+Verified: 6 settings tests, 32 browser tests, production build, and all 322 Django tests. Node 24.22.3, React 19.3.1, Vite 7.3.8; exact dependencies are locked in `package-lock.json`.
 
 `npm run build` outputs ignored `dist/` files. `npm run preview` serves a static build for inspection; it does not include the development proxy. Production hosting must serve the React build and forward `/api/` and `/prototype/` to Django on the same origin. Deployment is not configured in this port.

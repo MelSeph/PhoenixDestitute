@@ -15,7 +15,8 @@ class GameSessionMiddleware(SessionMiddleware):
             if cookie:
                 request.COOKIES[settings.SESSION_COOKIE_NAME] = cookie
         super().process_request(request)
-        if not request._separate_admin_session and request.session.get("_auth_user_id"):
+        if (not request._separate_admin_session and request.session.get("_auth_user_id")
+                and not request.session.get("_player_account_login")):
             # One-time compatibility for a staff login made before cookie
             # isolation. Validate it through Django before carrying game data.
             from django.contrib.auth import get_user

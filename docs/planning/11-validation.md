@@ -193,3 +193,11 @@ All 254 Django tests pass, none skipped. The updated UI passes 6 settings tests 
 - Django system check and migration drift check pass. Migration 0019 adds only the recovery-code table; it does not change existing players, births, or ownership.
 - The working database migration is pending a verified SQLite backup and before/after preservation comparison. No legacy frontend edits, commit, or push.
 - Details: [31-orphaned-character-recovery.md](31-orphaned-character-recovery.md).
+
+## Player accounts and requested local reset — 2026-11-15
+
+- **322 Django tests pass, none skipped**; all **6 React unit tests** and **32 Edge browser tests** pass. React production build succeeds. Browser coverage includes registration, transfer of the existing character, and sign-in/loading in a second browser.
+- Django checks and migration drift checks pass. Migrations 0020–0021 are applied locally.
+- The user-approved reset removed all game/story records and game-related admin logs, cleared active game selections in sessions, and reset numeric game table sequences. The existing Django superuser and shared catalog tables were preserved. All game-model counts are zero; SQLite integrity and foreign-key checks pass. No recovery copy of the cleared current saves was retained.
+- On a post-reset rerun, 320 of 321 Django tests passed; the browser-backed inventory adapter test failed before assertions because local Chromium/Edge could not initialize its GPU/cache process. The same test had passed in the earlier complete run. `manage.py check` and `makemigrations --check --dry-run` pass. Isolated rerun reproduced the browser process failure.
+- No changes to `legacy_game/`; commit/push not requested. See [32-player-accounts-and-game-data-reset.md](32-player-accounts-and-game-data-reset.md).
