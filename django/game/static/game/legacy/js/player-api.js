@@ -1,3 +1,162 @@
+// Identity lives outside catalog properties so it cannot leak into item stats.
+const browserItemIdentity = new WeakMap();
+let browserInventory = { version: 1, playthrough_id: null, revision: null, items: [] };
+let browserSaveLoaded = false;
+let inventoryError = "";
+let browserSaveExtras = {};
+const equipmentPositions = ["head", "armor", "hands", "waist", "legs", "feet",
+    "rightHand", "leftHand", "upperClothes", "lowerClothes", "legCoverings"];
+
+function inventoryAcquired(item) {
+    browserItemIdentity.set(item, { token: crypto.randomUUID(), definition_key: item.name });
+}
+
+function potionCounters() {
+    return [[healthPotion, "numHealthPotions"], [staminaPotion, "numStaminaPotions"],
+        [manaPotion, "numManaPotions"]];
+}
+
+function cloneInventory(value) {
+    return JSON.parse(JSON.stringify(value));
+}
+
+function validateEquipmentPositions(info, occupied) {
+    for (const position of equipmentPositions) {
+        if (inventoryCatalog.has(info[position]) && !occupied.has(position)) {
+            throw new Error(`Equipment at ${position} is missing from inventory. Save was not changed.`);
+        }
+    }
+}
+
+function createInventorySnapshot() {
+    const potions = potionCounters();
+    // Explicit carried/stored entries are retained without guessing from names.
+    const items = cloneInventory(browserInventory.items.filter(item =>
+        item.location !== "equipped" && !(item.kind === "consumable" &&
+            item.location === "carried" && potions.some(([potion]) => item.definition_key === potion.name))));
+    const usedPositions = new Set();
+    const seen = new Set();
+    for (const item of equippedItems) {
+        if (potions.some(([potion]) => potion.name === item.name)) continue;
+        if (seen.has(item)) throw new Error("Ambiguous repeated equipment object. Save was not changed.");
+        seen.add(item);
+        const positions = equipmentPositions.filter(position => playerInfo[position] === item.name);
+        if (!positions.length || positions.some(position => usedPositions.has(position))) {
+            throw new Error(`Cannot safely determine equipment position for ${item.name}. Save was not changed.`);
+        }
+        positions.forEach(position => usedPositions.add(position));
+        if (!browserItemIdentity.has(item)) inventoryAcquired(item);
+        const identity = browserItemIdentity.get(item);
+        items.push({ ...identity, definition_key: identity.definition_key || item.name,
+            kind: "equipment", quantity: 1, location: "equipped", slot: null,
+            properties: { ...cloneInventory(item), equipment_positions: positions } });
+    }
+    validateEquipmentPositions(playerInfo, usedPositions);
+    const occupied = new Set(items.filter(item => item.location === "carried").map(item => item.slot));
+    for (const [potion, counter] of potions) {
+        const quantity = playerStats[counter];
+        if (!Number.isSafeInteger(quantity) || quantity < 0) throw new Error(`Invalid ${counter}.`);
+        if (!quantity) continue;
+        const previous = browserInventory.items.find(item => item.kind === "consumable" &&
+            item.location === "carried" && item.definition_key === potion.name);
+        if (!browserItemIdentity.has(potion)) inventoryAcquired(potion);
+        let slot = previous ? previous.slot : 0;
+        while (occupied.has(slot)) slot++;
+        occupied.add(slot);
+        const entry = previous ? cloneInventory(previous) : {
+            ...browserItemIdentity.get(potion), definition_key: potion.name, kind: "consumable",
+            location: "carried", properties: cloneInventory(potion)
+        };
+        items.push({ ...entry, quantity, slot });
+    }
+    // Retain new tokens even if the HTTP response is lost.
+    browserInventory.items = cloneInventory(items);
+    return { ...browserInventory, items };
+}
+
+function prepareInventoryRestore(savedData, playthroughId) {
+    for (const [, counter] of potionCounters()) {
+        if (!Number.isSafeInteger(savedData.playerStats[counter]) || savedData.playerStats[counter] < 0) {
+            throw new Error(`Invalid saved ${counter}. Original save preserved.`);
+        }
+    }
+    const inventory = savedData.inventory;
+    if (inventory) {
+        if (inventory.version !== 1 || inventory.playthrough_id !== playthroughId ||
+            !Array.isArray(inventory.items)) throw new Error("Unsupported saved inventory.");
+        const equipment = [];
+        const used = new Set();
+        const tokens = new Set();
+        for (const [potion] of potionCounters()) {
+            if (inventory.items.filter(item => item.kind === "consumable" &&
+                item.location === "carried" && item.definition_key === potion.name).length > 1) {
+                throw new Error("Multiple legacy potion stacks are unsupported.");
+            }
+        }
+        for (const entry of inventory.items) {
+            if (!entry.token || tokens.has(entry.token) || !entry.properties ||
+                typeof entry.properties !== "object") throw new Error("Invalid saved item identity.");
+            tokens.add(entry.token);
+            if (entry.location !== "equipped") continue;
+            const positions = entry.properties.equipment_positions;
+            const template = inventoryCatalog.get(entry.definition_key);
+            if (!template || !Array.isArray(positions) || !positions.length ||
+                new Set(positions).size !== positions.length ||
+                positions.some(position => !equipmentPositions.includes(position) || used.has(position) ||
+                    savedData.playerInfo[position] !== entry.properties.name) ||
+                equipment.some(item => item.template === template)) {
+                throw new Error("Cannot safely restore equipped item positions.");
+            }
+            positions.forEach(position => used.add(position));
+            equipment.push({ template, entry });
+        }
+        validateEquipmentPositions(savedData.playerInfo, used);
+        return { inventory: cloneInventory(inventory), equipment };
+    }
+    if (!Array.isArray(savedData.equippedItems)) throw new Error("Saved equipment is missing.");
+    const equipment = [];
+    const used = new Set();
+    for (const name of savedData.equippedItems) {
+        if (potionCounters().some(([potion]) => potion.name === name)) continue;
+        const template = inventoryCatalog.get(name);
+        const positions = equipmentPositions.filter(position => savedData.playerInfo[position] === name);
+        if (!template || !positions.length || positions.some(position => used.has(position))) {
+            throw new Error(`Ambiguous legacy equipment: ${name}. Original save preserved.`);
+        }
+        positions.forEach(position => used.add(position));
+        equipment.push({ template, entry: { token: crypto.randomUUID(), definition_key: name,
+            properties: cloneInventory(inventoryCatalogDefaults.get(name)) } });
+    }
+    validateEquipmentPositions(savedData.playerInfo, used);
+    return { inventory: { version: 1, playthrough_id: playthroughId, revision: null,
+        base_updated_at: savedData._browserUpdatedAt || null, items: [] }, equipment };
+}
+
+function applyInventoryRestore(prepared) {
+    for (const { template, entry } of prepared.equipment) {
+        for (const key of Object.keys(template)) delete template[key];
+        Object.assign(template, cloneInventory(entry.properties));
+        delete template.equipment_positions;
+        browserItemIdentity.set(template, { id: entry.id, token: entry.token,
+            definition_key: entry.definition_key });
+    }
+    equippedItems.splice(0, equippedItems.length, ...prepared.equipment.map(item => item.template));
+    browserInventory = prepared.inventory;
+    if (prepared.inventory.revision !== null) {
+        for (const [potion, counter] of potionCounters()) {
+            const stacks = prepared.inventory.items.filter(item => item.kind === "consumable" &&
+                item.location === "carried" && item.definition_key === potion.name);
+            playerStats[counter] = stacks.reduce((sum, item) => sum + item.quantity, 0);
+            if (stacks.length) {
+                Object.assign(potion, cloneInventory(stacks[0].properties));
+                browserItemIdentity.set(potion, { id: stacks[0].id, token: stacks[0].token,
+                    definition_key: stacks[0].definition_key });
+            }
+        }
+    }
+    browserSaveLoaded = true;
+}
+
 async function loadPlayerFromDjango(playerId) {
     try {
         const response = await fetch(`/api/players/${playerId}/`);
@@ -19,8 +178,10 @@ async function loadPlayerFromDjango(playerId) {
 
 function createPlayerSnapshot() {
     const snapshot = {
+        ...browserSaveExtras,
         playerInfo: playerInfo,
         playerStats: playerStats,
+        inventory: createInventorySnapshot(),
 
         // Save equipped item names.
         equippedItems: equippedItems.map(
@@ -76,6 +237,14 @@ async function ensureLocalGamePlayer() {
 async function savePlayerToDjango() {
     try {
         await ensureLocalGamePlayer();
+        if (!browserSaveLoaded) {
+            const current = await fetch("/api/game/load/", { credentials: "same-origin" });
+            const result = await current.json();
+            if (current.status !== 404 || !result.playthrough_id) {
+                throw new Error("Load your existing save before saving with the inventory update.");
+            }
+            browserInventory.playthrough_id = result.playthrough_id;
+        }
         const snapshot = createPlayerSnapshot();
 
         const response = await fetch(
@@ -92,15 +261,25 @@ async function savePlayerToDjango() {
         );
 
         if (!response.ok) {
-            throw new Error(`Save failed: HTTP ${response.status}`);
+            const problem = await response.json();
+            throw new Error(problem.error || `Save failed: HTTP ${response.status}`);
         }
 
         const result = await response.json();
+        browserInventory = result.inventory;
+        browserSaveLoaded = true;
+        for (const item of equippedItems) {
+            const identity = browserItemIdentity.get(item);
+            const saved = identity && browserInventory.items.find(entry => entry.token === identity.token);
+            if (saved) browserItemIdentity.set(item, { id: saved.id, token: saved.token,
+                definition_key: saved.definition_key });
+        }
 
         console.log("Game saved successfully:", result);
 
         return result;
     } catch (error) {
+        inventoryError = error.message;
         console.error("Unable to save game:", error);
         return null;
     }
@@ -130,6 +309,8 @@ async function loadGameFromDjango() {
             throw new Error("Invalid save data received");
         }
 
+        result.data._browserPlaythroughId = result.playthrough_id;
+        result.data._browserUpdatedAt = result.updated_at;
         console.log("Saved game loaded:", result.data);
 
         return result.data;
@@ -159,34 +340,8 @@ async function restorePlayerFromDjango() {
         return false;
     }
 
-    // Find the original equipment objects by name.
-    if (!Array.isArray(savedData.equippedItems)) {
-        console.error("Saved equipment list is missing or invalid.");
-        return false;
-    }
-
-    const restoredEquipment = savedData.equippedItems.map(
-        itemName => equipArray.find(item => item.name === itemName)
-    );
-
-    // Stop if any equipment name cannot be found.
-    if (restoredEquipment.some(item => item === undefined)) {
-        console.error(
-            "Some saved equipment could not be found:",
-            savedData.equippedItems
-        );
-        return false;
-    }
-
-    // Preserve the existing equippedItems array.
-    equippedItems.splice(
-        0,
-        equippedItems.length,
-        ...restoredEquipment
-    );
-
-    Object.assign(playerInfo, savedData.playerInfo);
-    Object.assign(playerStats, savedData.playerStats);
+    // Prepare inventory first; apply only after all legacy save fields validate.
+    const preparedInventory = prepareInventoryRestore(savedData, savedData._browserPlaythroughId);
 
 
     // Validate saved material and gathering data.
@@ -221,15 +376,6 @@ async function restorePlayerFromDjango() {
         console.error("Saved gathering counters are invalid.");
         return false;
     }
-
-    // Restore the existing material object.
-    Object.assign(materialStats, savedData.materialStats);
-
-    // Restore gathering counters.
-    timesMined = progress.timesMined;
-    timesChopped = progress.timesChopped;
-    timesScooped = progress.timesScooped;
-    gathered = progress.gathered;
 
     console.log("Materials and gathering progress restored.");
 
@@ -283,6 +429,18 @@ async function restorePlayerFromDjango() {
             }
         }
     }
+
+    Object.assign(playerInfo, savedData.playerInfo);
+    Object.assign(playerStats, savedData.playerStats);
+    applyInventoryRestore(preparedInventory);
+    browserSaveExtras = cloneInventory(savedData);
+    delete browserSaveExtras._browserPlaythroughId;
+    delete browserSaveExtras._browserUpdatedAt;
+    Object.assign(materialStats, savedData.materialStats);
+    timesMined = progress.timesMined;
+    timesChopped = progress.timesChopped;
+    timesScooped = progress.timesScooped;
+    gathered = progress.gathered;
 
     // Update the original objects without rebuilding.
     for (const name of Object.keys(buildingTargets)) {
@@ -584,7 +742,7 @@ function initializeGameMenu() {
             if (result !== null) {
                 showGameNotification("Game saved successfully!");
             } else {
-                showGameNotification("Unable to save your game.", "error");
+                showGameNotification(inventoryError || "Unable to save your game.", "error");
             }
         } finally {
             // Restore the button after saving finishes.
@@ -631,7 +789,7 @@ function initializeGameMenu() {
             console.error("Load failed:", error);
 
             showGameNotification(
-                "An error occurred while loading your game.",
+                error.message || "An error occurred while loading your game.",
                 "error"
             );
         } finally {

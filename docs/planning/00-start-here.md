@@ -1,6 +1,6 @@
 # Start here — Phoenix Destitute backend planning
 
-**Status (2026-11-15):** Phase 2A foundational Django models (`Legacy`, `Character`, `Playthrough`) explicitly authorized; other gameplay systems remain in planning. Prior handbook baseline and source inventory remain intact.
+**Status (2026-11-15):** Phase 2F completed and pushed at `76d1123` (migration 0007 applied, 60 tests passed, confirmed by user). Phase 2G browser inventory bridge authorized with “make it so”; local implementation and validation are documented in [12-browser-inventory.md](12-browser-inventory.md). Commit/push approval remains separate. Earlier planning-only boundaries below are retained as historical context; later approved phase scopes supersede them.
 
 ## Read next
 

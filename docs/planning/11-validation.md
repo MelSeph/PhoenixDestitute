@@ -68,3 +68,13 @@ Do not convert a partial check into a passed check without doing the work.
 - No conversion of saved JSON to relational inventory: live gameplay still uses its existing save format.
 - Run `python manage.py check`, `python manage.py makemigrations --check --dry-run`, `python manage.py migrate`, `python manage.py test game`, `python manage.py showmigrations game`. Previous baseline 47; 13 tests added (expect 60).
 - Django runtime verification must be performed locally before treating Phase 2F as complete.
+
+## Phase 2G — local validation — 2026-11-15
+
+- User confirmed Phase 2F was pushed at `76d1123`, migration 0007 applied, and 60 tests passed. That 60-test baseline was also re-run successfully in this workspace before adding new tests.
+- Final `python manage.py test game`: **76 passed, none skipped**. This includes the existing 60 tests, 15 new inventory service/API tests, and a headless Edge test executing 17 JavaScript checks against the production adapter/save/load functions.
+- `python manage.py check`: passed with no issues. `python manage.py makemigrations --check --dry-run`: no changes detected.
+- Created `django/db.phase2g-backup.sqlite3`, then applied `0008_browser_inventory_identity` successfully. `showmigrations game` confirms 0001–0008 applied. Migration adds one nullable unique column; no browser inventory backfill or save conversion was run on the working database.
+- Chromium subprocess launch initially failed inside the Windows sandbox. The same test passed after the user approved running outside that sandbox. The browser's own sandbox was not disabled.
+- `legacy_game/` remains untouched. Existing untracked Phase 2C–2F README files were left alone. No commit or push performed.
+- See [12-browser-inventory.md](12-browser-inventory.md) for the implemented contract and remaining gameplay limitations. Headless tests cover adapter and mocked HTTP calls; they are not a manual full-game playthrough or concurrent load test.

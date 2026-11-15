@@ -93,3 +93,21 @@ Regression inventory-at-death and mastery diminishing returns remain approved *f
 | No hardcoded slot capacity | Inventory size and stack limits have not been finalized; the slot represents placement, not an approved capacity rule. |
 
 **Implementation boundary:** no changes to the legacy original, browser save/load API, Player or GameSave. No automatic material conversion, stat resets, world timeline simulation, or player death hook. Snapshot rows should only be created via the dedicated backend service. Item `properties` currently represents instance-specific attributes and is not a substitute for a future ItemDefinition / MaterialBatch schema.
+
+## Phase 2G — Browser inventory integration — 2026-11-15
+
+User approved the reviewed proposal with “make it so”. Commit and push still require separate approval. Detailed evidence, teaching notes, and limitations are in [12-browser-inventory.md](12-browser-inventory.md).
+
+Publication approval: user subsequently instructed “push to github”, authorizing committing the Phase 2G changes and pushing them to the existing GitHub remote. Unrelated untracked Phase 2C–2F README files remain excluded.
+
+| Decision | Reason / alternative rejected |
+|---|---|
+| Add a nullable unique client UUID alongside the existing item primary key | Preserve backend identities and avoid duplicate creations after lost responses; rebuilding all rows on every save rejected |
+| Synchronize a versioned inventory envelope inside the active-save transaction | Keep item rows, life-scoped JSON, and compatibility JSON consistent; independent item/save writes rejected |
+| Convert old saves only after a successful load and explicit save | Preserve old JSON and reject ambiguous conversion; bulk migration and name-based merging rejected |
+| Use body-position fields for worn gear and counters for potion quantities | The legacy array mixes gear and stale potion references; treating every entry as equipped or carried rejected |
+| Keep full item properties and explicit carried/stored entries | Preserve upgrades, durability, and distinct instances sharing a definition; automatic material conversion deferred |
+| Use original catalog defaults when converting name-only equipment, retaining legacy object references during restoration | Old saves lack instance properties; guessing missing upgrades or breaking reference-based gameplay comparisons rejected |
+| Require current playthrough and revision; require saved timestamp for first conversion | Reject stale tabs and old-client overwrites after conversion; blind overwrite rejected |
+| Leave NULL-token backend records unmanaged and block deletion of snapshot-linked rows | Preserve Phase 2F data/history; automatic adoption, deletion of history, and invented disposal rules rejected |
+| Keep transition UI and full new-life restoration deferred | Inventory synchronization alone cannot safely reset the rest of the game; stale-life writes and empty saves that would erase transferred items are rejected |

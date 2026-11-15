@@ -86,7 +86,16 @@ let craftedWarriorsRespite = new Equipment ("Warrior's Respite", 999999, 999, 99
 let equipArray = [dilapidatedHelmet, dilapidatedArmor, dilapidatedHand, dilapidatedBelt, dilapidatedLeg, dilapidatedFoot, dilapidatedSword, dilapidatedShield, poorHelmet, poorArmor, poorHand, poorBelt, poorLeg, poorFoot, poorBow, poorArrows, nonHelmet, nonArmor, nonHand, nonBelt, nonLeg, nonFoot, nonStaff, ironHelmet, ironArmor, ironHand, ironBelt, ironLeg, ironFoot, ironSword, ironShield, leatherHelmet, leatherArmor, leatherHand, leatherBelt, leatherLeg, leatherFoot, ironBow, ironArrows, mageHelmet,  mageArmor, mageHand, mageBelt, mageLeg, mageFoot, mageWeapon, mageWeapon1, mageWeapon2, craftedWarriorsRespite, comfortableBoxers, comfortablePanties, healthPotion, staminaPotion, manaPotion];
 
 let callEquipArray;
+const inventoryCatalog = new Map(equipArray.map(item => [item.name, item]));
+const inventoryCatalogDefaults = new Map(equipArray.map(item => [item.name, JSON.parse(JSON.stringify(item))]));
 let equippedItems = [];
+// Purchases reuse catalog objects; each acquisition needs a fresh instance token.
+equippedItems.push = function (...items) {
+    if (typeof inventoryAcquired === "function") {
+        for (const item of items) inventoryAcquired(item);
+    }
+    return Array.prototype.push.apply(this, items);
+};
 
 // Function to auto equip items
 function grabEquip() {

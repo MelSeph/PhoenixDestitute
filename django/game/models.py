@@ -171,8 +171,8 @@ class Playthrough(models.Model):
 class InventoryItem(models.Model):
     """One persistent item instance or homogeneous stack in one life.
 
-    This is separate from the legacy GameSave JSON and is not yet populated by
-    browser gameplay. An equipment item has quantity 1; materials may be stacks.
+    Versioned browser saves synchronize token-bearing records; older JSON saves
+    remain unchanged until conversion. Equipment has quantity 1; materials may stack.
     """
 
     class Kind(models.TextChoices):
@@ -189,6 +189,8 @@ class InventoryItem(models.Model):
         Playthrough, on_delete=models.PROTECT, related_name="inventory_items"
     )
     definition_key = models.CharField(max_length=100)
+    # Browser-generated retry identity; NULL leaves backend-only rows unmanaged.
+    client_token = models.UUIDField(null=True, blank=True, unique=True)
     kind = models.CharField(max_length=16, choices=Kind.choices)
     quantity = models.PositiveIntegerField(default=1)
     # Immutable item identity is its primary key; persistent instance attributes

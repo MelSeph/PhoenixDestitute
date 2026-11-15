@@ -1,9 +1,11 @@
 """Phase 2D: backend-only life-scoped save operations.
 
-No gameplay endpoints are connected. The old GameSave row is still updated as a
-compatibility mirror, but PlaythroughSave is the authority for life-aware reads.
+The session save/load API uses these services. The old GameSave row is updated
+as a compatibility mirror, but PlaythroughSave is the authority for life-aware reads.
 Historic saves are never modified by this service. A new life starts unsaved.
 """
+import copy
+
 from django.core.exceptions import ValidationError
 from django.db import transaction
 
@@ -25,8 +27,8 @@ def _active_life(player):
 def save_active_playthrough(*, player_id, data):
     """Save JSON to the active life; mirror to legacy GameSave atomically.
 
-    Not an inventory or death-transition service. Existing callers of GameSave
-    are not automatically life-aware until explicitly integrated later.
+    Versioned browser inventory is reconciled in this same transaction.
+    Existing callers of GameSave are not automatically life-aware.
     """
     if not isinstance(data, dict):
         raise ValidationError({"data": "A saved game must be a JSON object."})
@@ -35,6 +37,15 @@ def save_active_playthrough(*, player_id, data):
     except Player.DoesNotExist as exc:
         raise ValidationError({"player_id": "Player does not exist."}) from exc
     life = _active_life(player)
+    existing = PlaythroughSave.objects.filter(playthrough=life).first()
+    previous = existing.data.get("inventory") if existing else None
+    data = copy.deepcopy(data)
+    if "inventory" in data:
+        from .browser_inventory import reconcile
+        data["inventory"] = reconcile(life, data["inventory"], previous,
+                                      existing.updated_at.isoformat() if existing else None)
+    elif previous is not None:
+        raise ValidationError({"inventory": "This save requires versioned inventory. Reload with the current browser."})
     save, _ = PlaythroughSave.objects.update_or_create(
         playthrough=life, defaults={"data": data}
     )
@@ -42,14 +53,18 @@ def save_active_playthrough(*, player_id, data):
     return save
 
 
+@transaction.atomic
 def load_active_playthrough(*, player_id):
     """Return active life's JSON or None. Never fall back to an older life."""
     try:
-        player = Player.objects.get(pk=player_id)
+        player = Player.objects.select_for_update().get(pk=player_id)
     except Player.DoesNotExist as exc:
         raise ValidationError({"player_id": "Player does not exist."}) from exc
     life = _active_life(player)
     data = PlaythroughSave.objects.filter(playthrough=life).values_list("data", flat=True).first()
+    if data is not None and "inventory" in data:
+        from .browser_inventory import serialize_items
+        data["inventory"]["items"] = serialize_items(life)
     return data
 
 
