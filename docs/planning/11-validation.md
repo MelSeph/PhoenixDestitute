@@ -49,3 +49,11 @@ Do not convert a partial check into a passed check without doing the work.
 - Source inspection found no deployed save/load API routes in `django/phoenixdestitute/urls.py`; no frontend or public save API is changed here.
 - This packaged copy has syntax and ZIP checks only. **Django runtime check, migration, and tests must run on the user's installed environment**; expected test discovery 37 (27 previous + 10 new).
 - Run from `PhoenixDestitute/django`: `python manage.py check`, `python manage.py makemigrations --check --dry-run`, `python manage.py migrate`, `python manage.py test game`, `python manage.py showmigrations game`.
+
+## Phase 2E validation — 2026-11-15
+
+- Add session-scoped active save/load routes and ten API tests covering CSRF, malformed JSON, no session, separate sessions, historical save preservation, and no predecessor fallback.
+- Update only the Django-hosted legacy JavaScript and homepage CSRF-cookie provisioning; original `legacy_game/` remains read-only.
+- No schema change/migration; `makemigrations --check --dry-run` must report none.
+- Runtime tests **pending on user's Django environment**. Expected discovery: 47 tests (previous 37 + 10 new).
+- API cannot restore ownership of anonymous saves after browser session loss; no account authorization is implemented.

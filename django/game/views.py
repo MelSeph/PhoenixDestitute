@@ -7,6 +7,7 @@ from .models import Player
 from .life_foundation import create_local_player
 
 
+@ensure_csrf_cookie
 def index(request):
     return render(request, "game/index.html")
 

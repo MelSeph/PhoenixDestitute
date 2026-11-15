@@ -59,18 +59,35 @@ function createPlayerSnapshot() {
     return json;
 }
 
-async function savePlayerToDjango(playerId) {
+function getGameCsrfToken() {
+    const token = document.cookie.split("; ").find(part => part.startsWith("csrftoken="));
+    return token ? decodeURIComponent(token.slice("csrftoken=".length)) : "";
+}
+
+async function ensureLocalGamePlayer() {
+    const response = await fetch("/api/player/create/", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "X-CSRFToken": getGameCsrfToken() }
+    });
+    if (!response.ok) throw new Error(`Character initialization failed: HTTP ${response.status}`);
+}
+
+async function savePlayerToDjango() {
     try {
+        await ensureLocalGamePlayer();
         const snapshot = createPlayerSnapshot();
 
         const response = await fetch(
-            `/api/players/${playerId}/save/`,
+            "/api/game/save/",
             {
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/json"
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getGameCsrfToken()
                 },
-                body: snapshot
+                body: snapshot,
+                credentials: "same-origin"
             }
         );
 
@@ -89,10 +106,11 @@ async function savePlayerToDjango(playerId) {
     }
 }
 
-async function loadGameFromDjango(playerId) {
+async function loadGameFromDjango() {
     try {
         const response = await fetch(
-            `/api/players/${playerId}/load/`
+            "/api/game/load/",
+            { credentials: "same-origin" }
         );
 
         if (!response.ok) {
@@ -121,8 +139,8 @@ async function loadGameFromDjango(playerId) {
     }
 }
 
-async function restorePlayerFromDjango(playerId) {
-    const savedData = await loadGameFromDjango(playerId);
+async function restorePlayerFromDjango() {
+    const savedData = await loadGameFromDjango();
 
     if (!savedData) {
         console.error("No saved data available.");
@@ -561,7 +579,7 @@ function initializeGameMenu() {
         loadGameButton.disabled = true;
 
         try {
-            const result = await savePlayerToDjango(2);
+            const result = await savePlayerToDjango();
 
             if (result !== null) {
                 showGameNotification("Game saved successfully!");
@@ -595,7 +613,7 @@ function initializeGameMenu() {
         loadGameButton.disabled = true;
 
         try {
-            const restored = await restorePlayerFromDjango(2);
+            const restored = await restorePlayerFromDjango();
 
             if (restored === true) {
                 showGameNotification("Game loaded successfully!");

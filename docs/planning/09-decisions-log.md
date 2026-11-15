@@ -67,3 +67,16 @@ Regression inventory-at-death and mastery diminishing returns remain approved *f
 | Do not connect existing frontend/API or lifecycle transition code | Legacy JS references older `/api/players/<id>/save/` and `/load/` endpoints that are **not** present in current Django URL routes. Phase 2D is a storage foundation, not a production-ready death/save UI |
 
 **Known limitation:** Existing code that reads `GameSave` directly can still see a predecessor's data immediately after a backend-only simulated life transition and before the new life is saved. New code must use `load_active_playthrough` (which returns `None` for an unsaved life); UI/API cutover and stat/inventory reset are future milestones. The new schema enforces one save per playthrough; read-only historical policy is enforced by the service, not by database-level prohibitions on direct model writes. No account authorization or save/load endpoints are introduced.
+
+## Phase 2E — Session-scoped active-life save/load API — 2026-11-15
+
+| Decision | Rationale and limitation |
+|---|---|
+| Add `GET /api/game/load/` and `POST /api/game/save/` using only session-selected local Player | Avoid ID-based reads/writes to other characters; account saves still unsupported |
+| Return an explicit 404 for an unsaved active life | Never silently load predecessor data from the compatibility `GameSave` |
+| Continue using Phase 2D `PlaythroughSave` service, retaining atomic `GameSave` mirror | Historical saves remain immutable through the API; preserve previous integrations |
+| Update only Django-hosted legacy JS copy, not `legacy_game/` | Replace hard-coded Player 2 with session-bound active saves; auto-create local Player on first save |
+| Keep CSRF checks and provide homepage CSRF cookie | Prevent forged write requests; no CSRF exemption |
+| Do not expose life-transition APIs yet | Death snapshots, attribute resets, and inventory transfers not implemented |
+
+**Boundary:** Any old browser session cookie is needed to access its saved Player. Current implementation does not offer an account-recovery route or assign another player's save from a supplied ID.
