@@ -313,6 +313,45 @@ class InventoryItem(models.Model):
         if errors:
             raise ValidationError(errors)
 
+    def thermal_enchantment_data(self):
+        """Canonical instance contributions for reads and immutable death copies."""
+        return [dict(id=row.pk, region=row.region, warmth=str(row.warmth), cooling=str(row.cooling))
+                for row in self.thermal_enchantments.all()]
+
+
+class ItemThermalEnchantment(models.Model):
+    """One explicit regional contribution; multiple rows may stack on an item."""
+
+    item = models.ForeignKey(InventoryItem, on_delete=models.PROTECT, related_name="thermal_enchantments")
+    region = models.CharField(max_length=16, choices=ThermalRegion.choices)
+    warmth = models.DecimalField(max_digits=12, decimal_places=4, validators=[MinValueValidator(Decimal("0"))])
+    cooling = models.DecimalField(max_digits=12, decimal_places=4, validators=[MinValueValidator(Decimal("0"))])
+
+    class Meta:
+        ordering = ["pk"]
+        constraints = [
+            models.CheckConstraint(condition=models.Q(region__in=ThermalRegion.values), name="valid_enchantment_region"),
+            models.CheckConstraint(condition=models.Q(warmth__gte=0, cooling__gte=0), name="nonnegative_enchantment_ratings"),
+        ]
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        super().clean()
+        if self.item_id is not None:
+            item = self.item
+            if item.kind != InventoryItem.Kind.EQUIPMENT or item.quantity != 1:
+                raise ValidationError("Thermal enchantments require an equipment instance.")
+            if self._state.adding and (item.location == InventoryItem.Location.DESTROYED
+                    or not Playthrough.objects.filter(pk=item.playthrough_id, status=Playthrough.Status.ACTIVE).exists()):
+                raise ValidationError("New enchantments require usable equipment in an active life.")
+            if self._state.adding:
+                from .equipment_condition import validate_durability
+                if not isinstance(item.properties, dict):
+                    raise ValidationError("Equipment properties must be an object.")
+                validate_durability(item.properties.get("durability"), item.properties.get("max_durability"))
+                if item.properties["durability"] == 0:
+                    raise ValidationError("Zero-durability equipment cannot receive enchantments.")
+
 
 class EquippedPosition(models.Model):
     """One occupied position, with multiple rows for a multi-position instance."""
@@ -363,6 +402,7 @@ class DeathSnapshotEntry(models.Model):
     slot = models.PositiveIntegerField()
     quantity = models.PositiveIntegerField()
     properties = models.JSONField(default=dict)
+    thermal_enchantments = models.JSONField(default=list, blank=True)
 
     class Meta:
         constraints = [

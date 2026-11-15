@@ -15,8 +15,9 @@ def serialize_items(life):
     return [dict(id=item.pk, token=str(item.client_token),
                  definition_key=item.definition_key, kind=item.kind,
                  quantity=item.quantity, properties=copy.deepcopy(item.properties),
-                 location=item.location, slot=item.slot)
-            for item in life.inventory_items.exclude(client_token=None).exclude(location="destroyed").order_by("pk")]
+                 location=item.location, slot=item.slot, thermal_enchantments=item.thermal_enchantment_data())
+            for item in life.inventory_items.exclude(client_token=None).exclude(location="destroyed")
+            .prefetch_related("thermal_enchantments").order_by("pk")]
 
 
 def reconcile(life, incoming, previous, legacy_updated_at=None):
@@ -34,7 +35,8 @@ def reconcile(life, incoming, previous, legacy_updated_at=None):
     if not isinstance(entries, list):
         invalid("Inventory items must be a list.")
     current = {str(item.client_token): item for item in
-               life.inventory_items.select_for_update().exclude(client_token=None).exclude(location="destroyed")}
+               life.inventory_items.select_for_update().exclude(client_token=None).exclude(location="destroyed")
+               .prefetch_related("thermal_enchantments")}
     tokens, slots, pending = set(), set(), []
     for entry in entries:
         if not isinstance(entry, dict):
@@ -80,7 +82,10 @@ def reconcile(life, incoming, previous, legacy_updated_at=None):
             invalid("An existing identity cannot change item definition or kind.")
         if not item.pk and EquipmentDefinition.objects.filter(key=key).exists():
             invalid("Backend-defined equipment cannot be created by a browser save.")
-        if item.pk and item.equipment_definition_id is not None:
+        if ("thermal_enchantments" in entry
+                and entry["thermal_enchantments"] != (item.thermal_enchantment_data() if item.pk else [])):
+            invalid("Thermal enchantment changes require a backend operation.")
+        if item.pk and (item.equipment_definition_id is not None or item.thermal_enchantments.exists()):
             if (location != item.location or slot != item.slot or properties != item.properties):
                 invalid("Backend-defined equipment changes require a backend operation.")
         if (location == "equipped" and (not item.pk or item.location != "equipped")
@@ -99,7 +104,8 @@ def reconcile(life, incoming, previous, legacy_updated_at=None):
         item.location, item.slot, item.properties = location, slot, copy.deepcopy(properties)
         pending.append(item)
     removed = [item for token, item in current.items() if token not in tokens]
-    if any(item.equipment_definition_id is not None or item.equipped_positions.exists() for item in removed):
+    if any(item.equipment_definition_id is not None or item.equipped_positions.exists()
+           or item.thermal_enchantments.exists() for item in removed):
         invalid("Backend-defined equipment cannot be removed by a browser save.")
     if previous is None and removed:
         invalid("This life already has transferred inventory. It must be restored before saving.")

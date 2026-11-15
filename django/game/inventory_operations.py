@@ -24,6 +24,7 @@ def _inventory(life):
                   definition_key=item.definition_key, kind=item.kind,
                   quantity=item.quantity, properties=copy.deepcopy(item.properties),
                   location=item.location, slot=item.slot,
+                  thermal_enchantments=item.thermal_enchantment_data(),
                   equipment_definition=(dict(id=item.equipment_definition_id, key=item.equipment_definition.key,
                       positions=sorted(row.position for row in item.equipment_definition.required_positions.all()),
                       thermal_coverage=[dict(region=row.region, warmth=str(row.warmth), cooling=str(row.cooling),
@@ -32,7 +33,8 @@ def _inventory(life):
                           for row in item.equipment_definition.thermal_coverage.all()] or None)
                       if item.equipment_definition_id else None))
              for item in life.inventory_items.exclude(location="destroyed").select_related("equipment_definition")
-             .prefetch_related("equipment_definition__required_positions", "equipment_definition__thermal_coverage").order_by("pk")]
+             .prefetch_related("equipment_definition__required_positions", "equipment_definition__thermal_coverage",
+                               "thermal_enchantments").order_by("pk")]
     equipped = list(life.equipped_positions.order_by("position").values("item_id", "position"))
     saved = PlaythroughSave.objects.filter(playthrough=life).first()
     # Include save changes so a command cannot race a compatibility save caller.

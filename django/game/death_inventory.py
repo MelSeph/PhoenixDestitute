@@ -1,7 +1,7 @@
 """Phase 2F: backend-only death inventory capture and Regression transfer.
 
-Not connected to combat or the browser. The original JSON save is NOT a source
-of relational InventoryItem records. The eventual death flow must freeze further
+Not connected to combat or the browser. Legacy name-only JSON does not define
+relational item/enchantment records. The eventual death flow must freeze further
 inventory edits after capture and transition the life transactionally.
 """
 import copy
@@ -30,12 +30,13 @@ def capture_death_inventory(*, player_id):
         raise ValidationError({"player_id": "No active life exists."})
     items = list(InventoryItem.objects.select_for_update().filter(
         playthrough=life, location=InventoryItem.Location.CARRIED
-    ).order_by("slot"))
+    ).prefetch_related("thermal_enchantments").order_by("slot"))
     snapshot = DeathSnapshot.objects.create(playthrough=life)
     DeathSnapshotEntry.objects.bulk_create([
         DeathSnapshotEntry(
             snapshot=snapshot, item=item, slot=item.slot,
-            quantity=item.quantity, properties=copy.deepcopy(item.properties)
+            quantity=item.quantity, properties=copy.deepcopy(item.properties),
+            thermal_enchantments=item.thermal_enchantment_data()
         ) for item in items
     ])
     return snapshot
@@ -45,7 +46,7 @@ def capture_death_inventory(*, player_id):
 def regress_from_death_snapshot(*, player_id, snapshot_id):
     """Atomically transition and move eligible original items, never clones.
 
-    Rejects stale snapshots if carried item placement, quantity or attributes
+    Rejects stale snapshots if carried item placement, quantity, attributes or enchantments
     have changed since death; callers cannot reorganize inventory after death.
     Already-transferred snapshots cannot be reused.
     """
@@ -73,12 +74,13 @@ def regress_from_death_snapshot(*, player_id, snapshot_id):
     current = list(InventoryItem.objects.select_for_update().filter(
         playthrough_id=snapshot.playthrough_id,
         location=InventoryItem.Location.CARRIED,
-    ).order_by("slot"))
+    ).prefetch_related("thermal_enchantments").order_by("slot"))
     if len(current) != len(entries):
         raise ValidationError({"snapshot_id": "Carried inventory changed after death."})
     for entry, item in zip(entries, current):
         if (entry.item_id != item.pk or entry.slot != item.slot
-                or entry.quantity != item.quantity or entry.properties != item.properties):
+                or entry.quantity != item.quantity or entry.properties != item.properties
+                or entry.thermal_enchantments != item.thermal_enchantment_data()):
             raise ValidationError({"snapshot_id": "Carried inventory changed after death."})
 
     following = apply_life_outcome(player_id=player_id, outcome=LifeOutcome.REGRESSION)

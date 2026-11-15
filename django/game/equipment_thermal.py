@@ -15,7 +15,8 @@ def calculate_item_thermal(*, player_id, item_id):
     """Return explicit regional ratings and exact wear-scaled ordinary effects.
 
     No definition/coverage means unconfigured, not an inferred zero rating.
-    Thermal enchantment data is not defined yet and is not interpreted here.
+    Structured thermal enchantments are calculated separately; legacy JSON is
+    never interpreted here.
     """
     _, life = _locked_life(player_id)
     if type(item_id) is not int:
