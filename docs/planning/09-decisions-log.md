@@ -233,3 +233,11 @@ The user approved the reviewed Phase 2L implementation plan with “yes”: expl
 Migration 0014 creates the contribution table and snapshot-copy field; existing snapshots receive empty structured lists. Destruction retains contribution rows as history but ends their effects. Regression transfers the original item/contribution IDs and rejects post-death contribution changes. The browser cannot edit those rows or remove/rearrange their protected source through full-payload saves. Details: [19-thermal-enchantments.md](19-thermal-enchantments.md). Commit/push require separate approval.
 
 Publication authorization: the user subsequently instructed “commit and push to github”, approving publication of the Phase 2L thermal contribution model/calculator, inventory/save protections, death-snapshot integration, migration 0014, tests, and planning decisions. The full suite passed 199 tests before publication. Weather/scoring, application/repair rolls, and frontend work remain deferred.
+
+## Phase 2M — explicitly nonthermal equipment — 2026-11-15
+
+Phase 2L was pushed at `ebc1cbb`. The user approved an explicit backend definition declaration of **no ordinary thermal effects**, distinct from unconfigured data, while preserving thermal enchantments. Implemented as `EquipmentDefinition.no_ordinary_thermal_effects`, default false; no automatic classification by name, item kind, or missing records. Explicitly nonthermal items add no ordinary warmth/cooling/blockage, but still obey condition/ownership/position rules and retain magical effects.
+
+Conflicting ordinary coverage is rejected rather than discarded, through model validation and calculator checks; validation uses current database state rather than stale caches. The declaration is read-only inventory metadata included in revision hashes. Migration 0015 adds the false default without deleting/converting existing data. Tests and teaching notes: [20-nonthermal-equipment.md](20-nonthermal-equipment.md). Commit/push remain separately authorized.
+
+Publication authorization: the user subsequently instructed “commit and push to github”, approving publication of the Phase 2M explicit nonthermal declaration, calculator/revision integration, migration 0015, tests, and planning decisions. The full suite passed 214 tests before publication. Weather/scoring and frontend work remain deferred.

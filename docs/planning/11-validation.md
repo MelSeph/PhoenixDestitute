@@ -134,3 +134,11 @@ Do not convert a partial check into a passed check without doing the work.
 - Tests verify unscaled magical contributions, armor bypass, additive/independent regional targets, exact totals, active source selection, incomplete diagnostics, model validation, and read-only behavior. Repeated saves preserve contribution IDs; browser tampering is rejected.
 - Snapshot tests verify copied contribution data, rejection of additions/edits/deletions after death, preserved item/contribution IDs through Regression, and unchanged archived JSON. A cached-Playthrough validation failure found during development was fixed by querying current life status; the final full suite passed.
 - No public enchantment mutation API, weather/scoring engine, frontend, or `legacy_game/` changes. No commit or push. Details: [19-thermal-enchantments.md](19-thermal-enchantments.md).
+
+## Phase 2M — local validation — 2026-11-15
+
+- Full suite: **214 tests passed, none skipped** (199 previous + 15 explicit-nonthermal tests), including existing headless Chromium checks.
+- `python manage.py check`: no issues. `python manage.py makemigrations --check --dry-run`: no changes detected.
+- Created backup `django/db.phase2m-backup.sqlite3`, then successfully applied `0015_explicit_nonthermal_equipment`. `showmigrations game` confirms 0001–0015 applied. Existing definitions keep false; no item is automatically classified and no coverage/save/property data is removed.
+- Tests distinguish unconfigured from explicitly nonthermal data; verify enchantment preservation, no ordinary blockage, stale revisions, invalid-condition handling, conflict rejection/current-database validation, read-only metadata, and unchanged legacy properties.
+- No public catalog editor, weather/scoring engine, frontend, or `legacy_game/` changes. No commit or push. Details: [20-nonthermal-equipment.md](20-nonthermal-equipment.md).

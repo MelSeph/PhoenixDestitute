@@ -195,6 +195,14 @@ class EquipmentDefinition(models.Model):
     """Shared position requirements; owned instances keep separate properties."""
 
     key = models.CharField(max_length=100, unique=True)
+    no_ordinary_thermal_effects = models.BooleanField(default=False)
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        super().clean()
+        if (self.pk and self.no_ordinary_thermal_effects
+                and EquipmentThermalCoverage.objects.filter(definition_id=self.pk).exists()):
+            raise ValidationError("Nonthermal equipment definitions cannot also declare ordinary thermal coverage.")
 
 
 class EquipmentDefinitionPosition(models.Model):
@@ -241,6 +249,13 @@ class EquipmentThermalCoverage(models.Model):
             models.CheckConstraint(condition=(models.Q(breathability__isnull=True)
                 | models.Q(breathability__gte=0, breathability__lte=100)), name="thermal_breathability_percentage"),
         ]
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        super().clean()
+        if self.definition_id and EquipmentDefinition.objects.filter(
+                pk=self.definition_id, no_ordinary_thermal_effects=True).exists():
+            raise ValidationError("Nonthermal equipment definitions cannot declare ordinary thermal coverage.")
 
 
 class InventoryItem(models.Model):

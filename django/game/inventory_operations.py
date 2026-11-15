@@ -26,6 +26,7 @@ def _inventory(life):
                   location=item.location, slot=item.slot,
                   thermal_enchantments=item.thermal_enchantment_data(),
                   equipment_definition=(dict(id=item.equipment_definition_id, key=item.equipment_definition.key,
+                      no_ordinary_thermal_effects=item.equipment_definition.no_ordinary_thermal_effects,
                       positions=sorted(row.position for row in item.equipment_definition.required_positions.all()),
                       thermal_coverage=[dict(region=row.region, warmth=str(row.warmth), cooling=str(row.cooling),
                           breathability=str(row.breathability) if row.breathability is not None else None,

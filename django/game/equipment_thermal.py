@@ -14,7 +14,8 @@ from .models import InventoryItem
 def calculate_item_thermal(*, player_id, item_id):
     """Return explicit regional ratings and exact wear-scaled ordinary effects.
 
-    No definition/coverage means unconfigured, not an inferred zero rating.
+    Missing data stays unconfigured unless the definition explicitly declares
+    no ordinary thermal effects. That declaration adds no ordinary regions.
     Structured thermal enchantments are calculated separately; legacy JSON is
     never interpreted here.
     """
@@ -30,7 +31,10 @@ def calculate_item_thermal(*, player_id, item_id):
     if item.definition_key != item.equipment_definition.key:
         raise ValidationError("Equipment definition must match the instance key.")
     coverage = list(item.equipment_definition.thermal_coverage.all())
-    if not coverage:
+    nonthermal = item.equipment_definition.no_ordinary_thermal_effects
+    if nonthermal and coverage:
+        raise ValidationError("Nonthermal equipment cannot also have ordinary thermal coverage.")
+    if not coverage and not nonthermal:
         return result
     if not isinstance(item.properties, dict):
         raise ValidationError("Equipment properties must be an object.")
@@ -38,6 +42,9 @@ def calculate_item_thermal(*, player_id, item_id):
     multiplier = effectiveness_multiplier(current=current, maximum=item.properties.get("max_durability"))
     if current == 0:
         raise ValidationError("Zero-durability equipment is not usable.")
+    if nonthermal:
+        result["configured"] = True
+        return result
     for row in coverage:
         row.full_clean(validate_unique=False, validate_constraints=False)
         breathability = (1 - (1 - Fraction(row.breathability) / 100) * multiplier
