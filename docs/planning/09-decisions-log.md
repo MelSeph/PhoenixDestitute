@@ -241,3 +241,11 @@ Phase 2L was pushed at `ebc1cbb`. The user approved an explicit backend definiti
 Conflicting ordinary coverage is rejected rather than discarded, through model validation and calculator checks; validation uses current database state rather than stale caches. The declaration is read-only inventory metadata included in revision hashes. Migration 0015 adds the false default without deleting/converting existing data. Tests and teaching notes: [20-nonthermal-equipment.md](20-nonthermal-equipment.md). Commit/push remain separately authorized.
 
 Publication authorization: the user subsequently instructed “commit and push to github”, approving publication of the Phase 2M explicit nonthermal declaration, calculator/revision integration, migration 0015, tests, and planning decisions. The full suite passed 214 tests before publication. Weather/scoring and frontend work remain deferred.
+
+## Phase 2N — thermal read API authorization — 2026-11-15
+
+Phase 2M was pushed at `e44ddf8`. The user approved the reviewed Phase 2N plan with “yes”: GET `/api/equipment/thermal/`, scoped solely through the local-player session to the active life; ordinary/magical/combined results and existing incomplete diagnostics; exact nested Fraction values encoded as string numerator/denominator pairs; and ownership, precision, and read-only tests. This preserves exact transport beyond JavaScript's safe integer range without choosing a rounding rule. Valid incomplete/empty results use 200; service validation conflicts use 409; existing session/account/method restrictions remain in force.
+
+No existing API behavior, models, saves, frontend, weather, or scoring rules are changed. No new migration or database update is required. Details: [21-outfit-thermal-api.md](21-outfit-thermal-api.md). Commit/push require separate approval.
+
+Publication authorization: the user subsequently instructed “commit and push to github”, approving publication of the Phase 2N read-only thermal endpoint, exact JSON serialization, tests, and documentation. The full suite passed 228 tests before publication. No migration, frontend, or new gameplay rules are included.

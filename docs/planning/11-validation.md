@@ -142,3 +142,10 @@ Do not convert a partial check into a passed check without doing the work.
 - Created backup `django/db.phase2m-backup.sqlite3`, then successfully applied `0015_explicit_nonthermal_equipment`. `showmigrations game` confirms 0001–0015 applied. Existing definitions keep false; no item is automatically classified and no coverage/save/property data is removed.
 - Tests distinguish unconfigured from explicitly nonthermal data; verify enchantment preservation, no ordinary blockage, stale revisions, invalid-condition handling, conflict rejection/current-database validation, read-only metadata, and unchanged legacy properties.
 - No public catalog editor, weather/scoring engine, frontend, or `legacy_game/` changes. No commit or push. Details: [20-nonthermal-equipment.md](20-nonthermal-equipment.md).
+
+## Phase 2N — local validation — 2026-11-15
+
+- Full suite: **228 tests passed, none skipped** (214 previous + 14 thermal API tests), including existing headless Chromium checks.
+- `python manage.py check`: no issues. `python manage.py makemigrations --check --dry-run`: no changes detected. No migration or database update required.
+- Tests cover exact nested and very large fractions, response flags/IDs, incomplete diagnostics, nonthermal enchantments, session/account/method restrictions, ignored foreign-owner query parameters, service conflicts, unsaved new-life isolation, and no gameplay/save writes on repeated GETs.
+- Existing APIs/calculators remain unchanged; the new endpoint is read-only. No weather/scoring, frontend, or `legacy_game/` changes. No commit or push. Details: [21-outfit-thermal-api.md](21-outfit-thermal-api.md).
