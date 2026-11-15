@@ -108,3 +108,11 @@ Do not convert a partial check into a passed check without doing the work.
 - Created SQLite backup `django/db.phase2i-backup.sqlite3` before successfully applying `0011_equipment_definitions_positions`. `showmigrations game` confirms 0001–0011 applied. No automatic catalog creation, legacy adoption, or inventory/save conversion.
 - Tests cover all agreed garment layers, multi-position and two-handed equipment, atomic manual swaps/unequips, identity/properties, ownership/staleness, uniqueness, destruction cleanup, save rollback/protection, and Regression history.
 - Placement services are backend-only and do not calculate stats or score upgrades. No new public equip endpoints, frontend changes, or edits to `legacy_game/`. No commit or push. Details: [16-equipment-placement.md](16-equipment-placement.md).
+
+## Phase 2J — local validation — 2026-11-15
+
+- Full suite: **152 tests passed, none skipped** (136 previous + 16 thermal definition/calculator tests), including existing headless Chromium checks.
+- `python manage.py check`: no issues. `python manage.py makemigrations --check --dry-run`: no changes detected.
+- Created backup `django/db.phase2j-backup.sqlite3`, then applied `0012_equipment_thermal_coverage` successfully. `showmigrations game` confirms 0001–0012 applied. No automatic rating assignment, catalog seed, property conversion, or save mutation.
+- Tests cover regional coverage independent of equipment positions, distinct and zero ratings, missing configuration, exact wear-scaled decimals, metadata/revision changes, constraints, invalid data, read isolation, and ownership/life/condition validation.
+- No outfit totals, armor suppression coefficients, weather/scoring formulas, thermal enchantment interpretation, or frontend work. No `legacy_game/` edits, commit, or push. Details: [17-thermal-definitions.md](17-thermal-definitions.md).

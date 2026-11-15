@@ -1,4 +1,7 @@
 
+from decimal import Decimal
+
+from django.core.validators import MinValueValidator
 from django.db import models
 
 
@@ -202,6 +205,34 @@ class EquipmentDefinitionPosition(models.Model):
         constraints = [
             models.UniqueConstraint(fields=["definition", "position"], name="unique_definition_position"),
             models.CheckConstraint(condition=models.Q(position__in=EquipmentPosition.values), name="valid_definition_position"),
+        ]
+
+
+class ThermalRegion(models.TextChoices):
+    HEAD = "head", "Head"
+    NECK = "neck", "Neck"
+    UPPER_TORSO = "upper_torso", "Upper torso"
+    LOWER_TORSO = "lower_torso", "Lower torso"
+    ARMS = "arms", "Arms"
+    HANDS = "hands", "Hands"
+    LEGS = "legs", "Legs"
+    FEET = "feet", "Feet"
+
+
+class EquipmentThermalCoverage(models.Model):
+    """Explicit ordinary thermal ratings, independent of equipment positions."""
+
+    definition = models.ForeignKey(EquipmentDefinition, on_delete=models.CASCADE, related_name="thermal_coverage")
+    region = models.CharField(max_length=16, choices=ThermalRegion.choices)
+    warmth = models.DecimalField(max_digits=12, decimal_places=4, validators=[MinValueValidator(Decimal("0"))])
+    cooling = models.DecimalField(max_digits=12, decimal_places=4, validators=[MinValueValidator(Decimal("0"))])
+
+    class Meta:
+        ordering = ["region"]
+        constraints = [
+            models.UniqueConstraint(fields=["definition", "region"], name="unique_definition_thermal_region"),
+            models.CheckConstraint(condition=models.Q(region__in=ThermalRegion.values), name="valid_thermal_region"),
+            models.CheckConstraint(condition=models.Q(warmth__gte=0, cooling__gte=0), name="nonnegative_thermal_ratings"),
         ]
 
 
