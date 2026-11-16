@@ -187,6 +187,7 @@ test('starting attributes fit a mobile viewport with 200% text', async ({ page }
   await page.setViewportSize({ width: 375, height: 812 });
   await page.goto('/');
   await page.locator('.options-toggle').click();
+  await page.getByText('Theme and Readability', { exact: true }).click();
   await page.getByLabel('Text Size', { exact: true }).selectOption('200');
   await signUpAndStart(page);
   await expect(page.getByRole('checkbox', { name: 'Lock Baseline Condition', exact: true })).toBeVisible();

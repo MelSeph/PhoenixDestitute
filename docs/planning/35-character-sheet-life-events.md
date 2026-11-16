@@ -12,6 +12,8 @@ The Character Sheet does not repeat Hair color as its own row; the selected colo
 
 The first attribute row has no top separator; row separators begin after Luck.
 
+In the active game, Options opens as its own right pane, replacing the currently visible pane. Its Close action restores the pane that was open immediately before Options. Landing and character-selection Options remain dropdown menus.
+
 ## Pane navigation
 
 - The game tracks the pane that was active before opening the character sheet.

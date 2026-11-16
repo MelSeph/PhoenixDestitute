@@ -39,6 +39,7 @@ export default function CharacterManager({ optionsMenu, onCurrentChange }) {
   const [creating, setCreating] = useState(false);
   const [activePane, setActivePane] = useState('crib');
   const [paneBeforeSheet, setPaneBeforeSheet] = useState('crib');
+  const [paneBeforeOptions, setPaneBeforeOptions] = useState('crib');
   const [lifeEventView, setLifeEventView] = useState({ events: null, error: '' });
   const [childState, setChildState] = useState({ busy: false, dirty: false });
   const pending = useRef(false);
@@ -153,6 +154,11 @@ export default function CharacterManager({ optionsMenu, onCurrentChange }) {
     if (characterSheetOpen) setActivePane(paneBeforeSheet);
     else { setPaneBeforeSheet(activePane); setActivePane('sheet'); }
   }
+  function openGameOptions() {
+    setPaneBeforeOptions(activePane);
+    setActivePane('options');
+  }
+  function closeGameOptions() { setActivePane(paneBeforeOptions); }
   async function deleteAccount(event) {
     event.preventDefault();
     if (pending.current || !csrfToken()) return;
@@ -169,8 +175,8 @@ export default function CharacterManager({ optionsMenu, onCurrentChange }) {
   }
   const accountOptions = account?.authenticated ? cloneElement(optionsMenu, {}, <>
     {optionsMenu.props.children}
-    <section className="setting-section account-deletion" aria-label="Delete player account">
-      <h3>Delete player account</h3>
+    <details className="setting-section account-deletion">
+      <summary>Delete player account</summary>
       <p>Your account and live character records will be removed. You can reclaim them by signing in with your current username and password within two years.</p>
       <form onSubmit={deleteAccount}>
         <label htmlFor="delete-account-username">Type {account.username} to confirm</label>
@@ -180,7 +186,7 @@ export default function CharacterManager({ optionsMenu, onCurrentChange }) {
         <button disabled={locked || deleteConfirmation !== account.username}>Delete account</button>
       </form>
       {accountMessage && <p role="alert">{accountMessage}</p>}
-    </section>
+    </details>
   </>) : optionsMenu;
   useEffect(() => {
     if (screen !== 'game') return undefined;
@@ -251,7 +257,10 @@ export default function CharacterManager({ optionsMenu, onCurrentChange }) {
           disabled={busy || childState.busy} onClick={() => accountAction()}>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17l5-5-5-5m5 5H3M13 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6" /></svg>
         </button>
-        {accountOptions}
+        <button type="button" className="icon-button secondary" aria-label="Options" title="Options"
+          aria-expanded={activePane === 'options'} onClick={openGameOptions}>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 3-1 3-3 1-2 4 2 2 1 4 3 1 2 3 4-1 1-3 3-1 2-4-2-2-1-4-3-1-2-3Z" /><circle cx="12" cy="12" r="3" /></svg>
+        </button>
       </div>
         <button className="secondary" disabled={busy || childState.busy} onClick={() => { setScreen('selection'); setCreating(false); }}>Choose another character</button>
       </div>
@@ -276,6 +285,11 @@ export default function CharacterManager({ optionsMenu, onCurrentChange }) {
           <time dateTime={event.occurred_at}>{new Date(event.occurred_at).toLocaleString()}</time><br />{event.text}
         </p>) : <p>No life events have been recorded yet.</p>}
       </div>
+    </section>}
+    {activePane === 'options' && <section className="panel game-options-page" aria-labelledby="game-options-heading">
+      <div className="game-options-header"><h2 id="game-options-heading">Game Options</h2>
+        <button type="button" className="secondary" onClick={closeGameOptions}>Close</button></div>
+      {cloneElement(accountOptions, { open: true, className: 'options-menu game-options-inline' })}
     </section>}
     {current?.kind === 'legacy' && <section className="panel"><h2>{current.name}</h2><p>Level {current.level} · Experience {current.experience}</p></section>}
   </div></div>;

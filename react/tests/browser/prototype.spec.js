@@ -22,24 +22,26 @@ test('prototype layout, readability persistence, and independent resets', async 
   await expect(page.getByRole('heading', { name: 'PhoenixDestitute', exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Appearance Settings' })).not.toBeVisible();
   await options(page);
+  await expect(page.locator('.appearance-settings > .setting-section[open]')).toHaveCount(0);
   await page.screenshot({ path: testInfo.outputPath('desktop.png'), fullPage: true });
+  await page.getByText('Theme and Readability', { exact: true }).click();
   await page.getByLabel('Color Theme').selectOption('daylight');
   await page.getByLabel('Text Size', { exact: true }).selectOption('150');
   await page.getByLabel('Word Spacing', { exact: true }).selectOption('wide');
-  await expect(page.getByText('Customized preferences: 2 of 14')).toBeVisible();
   await page.reload(); await options(page);
+  await expect(page.locator('.appearance-settings > .setting-section[open]')).toHaveCount(0);
+  await page.getByText('Theme and Readability', { exact: true }).click();
   await expect(page.getByLabel('Text Size', { exact: true })).toHaveValue('150');
+  await page.getByText('Restore Defaults', { exact: true }).click();
   await page.getByRole('button', { name: 'Reset Readability Settings', exact: true }).click();
   await expect(page.getByLabel('Color Theme')).toHaveValue('daylight');
   await expect(page.getByLabel('Text Size', { exact: true })).toHaveValue('100');
-  await page.getByText('Live Appearance Summary', { exact: false }).filter({ has: page.locator('span') }).click();
-  await expect(page.getByText('Summary display: Collapsed')).toBeVisible();
-  await page.reload(); await options(page);
-  await expect(page.getByText('Summary display: Collapsed')).toBeVisible();
 });
 test('custom picker validates contrast, cancels with Escape, and returns focus', async ({ page }) => {
   await options(page);
+  await page.getByText('Theme and Readability', { exact: true }).click();
   await page.getByLabel('Color Theme').selectOption('custom');
+  await page.getByText('Custom Theme Colors', { exact: true }).click();
   const trigger = page.getByRole('button', { name: 'Choose accent color', exact: true });
   await trigger.click();
   await page.getByLabel('Hexadecimal color').fill('#202d3a');
@@ -54,12 +56,15 @@ test('custom picker validates contrast, cancels with Escape, and returns focus',
 });
 test('import review cancellation, confirmation, undo, and malformed backup rejection', async ({ page }) => {
   await options(page);
+  await page.getByText('Back Up Appearance Settings', { exact: true }).click();
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Export Appearance Settings', exact: true }).click();
   const downloaded = await downloadPromise;
   expect(downloaded.suggestedFilename()).toBe('phoenixdestitute-appearance-backup.json');
   const path = await downloaded.path();
+  await page.getByText('Theme and Readability', { exact: true }).click();
   await page.getByLabel('Color Theme').selectOption('daylight');
+  await page.getByText('Restore Appearance Backup', { exact: true }).click();
   await page.getByLabel('Appearance backup JSON file').setInputFiles(path);
   await page.getByRole('button', { name: 'Import Appearance Settings', exact: true }).click();
   await expect(page.getByRole('dialog')).toContainText('Changed from Daylight');
@@ -79,6 +84,7 @@ test('import review cancellation, confirmation, undo, and malformed backup rejec
 test('mobile layout fits at 200% text and modal traps keyboard focus', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 375, height: 812 });
   await options(page);
+  await page.getByText('Theme and Readability', { exact: true }).click();
   await page.getByLabel('Text Size', { exact: true }).selectOption('200');
   await page.getByLabel('Color Theme').selectOption('custom');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);

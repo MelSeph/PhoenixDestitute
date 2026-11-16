@@ -348,6 +348,14 @@ The user requested removing Name and Gender from Body details, then placing Gend
 
 The user requested removing the Hair color row from the Character Sheet because its color is already visible on the Hair length portrait, and requested a visual model for Hair Texture. The sheet retains hair color in the portrait, while a texture swatch model shows the selected texture in that color.
 
+The user reported that game Options appeared as a dropdown over the crib. In the active game it now replaces the right pane; Close restores the previously active pane. Account landing and character-selection Options retain their dropdown behavior.
+
+The user requested that each Game Options section be collapsible and initially closed, including the account-deletion section. Appearance categories now use independent disclosure controls and all begin collapsed.
+
+The user marked the empty status line in Game Options for removal. The status region now renders only while it contains a message.
+
+The user requested removing Live Appearance Summary as unhelpful to end users. That panel and its customized-count display are removed; explicit copy/download summary actions in Back Up Appearance Settings remain.
+
 ## Save access after browser restart — 2026-11-15
 
 The user reported save loading failing after closing/reopening the same normal browser/address. Confirmed a shared admin/game session lifecycle bug, rather than a browser-close cookie-expiry default. Isolated admin into its own cookie, retained persistent game cookies, and added validated compatibility handling for old shared staff sessions without claiming unrelated orphaned characters. See [30-session-persistence.md](30-session-persistence.md). All 309 Django tests and 9 relevant browser cases pass, including an actual persistent-profile browser process restart. No migration, account/password changes, live-data reset, commit, or push.

@@ -5,6 +5,7 @@ async function start(page, { mobile = false } = {}) {
   if (mobile) {
     await page.setViewportSize({ width: 375, height: 812 });
     await page.locator('.options-toggle').click();
+    await page.getByText('Theme and Readability', { exact: true }).click();
     await page.getByLabel('Text Size', { exact: true }).selectOption('200');
   }
   await page.getByRole('button', { name: 'Create new account', exact: true }).click();

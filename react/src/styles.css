@@ -54,6 +54,7 @@ button.secondary:not(:first-child) { margin-left: .5em; }
 .game-prose p { margin: 0; }
 .game-prose p + p { margin-block-start: var(--paragraph-spacing); }
 .setting-section { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--color-border); }
+details.setting-section > summary { color: var(--color-accent); font-size: 1.1em; }
 summary { cursor: pointer; padding-block: .5em; font-weight: bold; }
 .options-toggle { display: inline-flex; align-items: center; gap: .55em; list-style: none; margin-bottom: 16px; }
 .options-toggle::-webkit-details-marker { display: none; }
@@ -64,6 +65,11 @@ summary { cursor: pointer; padding-block: .5em; font-weight: bold; }
 .options-menu { position: relative; z-index: 5; flex: none; }
 .options-toggle.icon-button { display: inline-grid; place-items: center; margin: 0; }
 .options-menu[open] .appearance-settings { position: absolute; top: calc(100% + 8px); right: 0; width: min(88vw, 40rem); max-height: 78vh; overflow: auto; box-shadow: 0 8px 24px rgb(0 0 0 / .35); }
+.game-options-page { grid-column: 2; grid-row: 1; width: 100%; min-width: 0; min-height: calc(100vh - 260px); margin: 0; overflow: auto; }
+.game-options-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.game-options-header h2 { margin-top: 0; }
+.game-options-inline > .options-toggle { display: none; }
+.game-options-inline[open] .appearance-settings { position: static; inset: auto; width: auto; max-height: none; overflow: visible; box-shadow: none; }
 .icon-button { display: inline-grid; place-items: center; width: 40px; min-width: 40px; min-height: 40px; padding: 7px; }
 .icon-button svg, .account-actions svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
 .game-area { width: 100%; }

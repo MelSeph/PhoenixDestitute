@@ -25,6 +25,14 @@ All **34 browser scenarios pass** across the complete run and isolated reruns, c
 
 The player requested smaller, icon-based controls; one Sign in action plus Create new below the username/password fields; and an Options control at the upper right of account and character sections. Options appears in the sign-in, character-selection, and current game-entry sections; its gear icon keeps an accessible Options label. Character roster load/delete controls use compact icons with accessible names. Account actions remain labeled and include sign-in/add icons. The game-entry placement is being used as the closest current React section to the user's “Console” wording; the application does not currently name a component Console.
 
+In the active game, Options occupies the right pane, replacing the currently open game page. Closing Game Options restores the page that was open immediately before it. Landing and character-selection Options remain dropdowns.
+
+Every Game Options category, including Delete player account, is a collapsed-by-default disclosure section. Opening one category does not open the others.
+
+The Game Options status message is omitted while empty; it appears only when settings produce feedback.
+
+The Live Appearance Summary panel was removed from Game Options. Appearance summary export and copy actions remain available under Back Up Appearance Settings.
+
 ## Pane sizing and birth resource strip — 2026-11-16
 
 For paired left/right game panes, both visible panes fill the same CSS Grid row, including when toggling from the crib to the character sheet. The Character Sheet's bordered panel fills its pane wrapper. Hidden panes do not affect the active row. Apply this rule to future paired-pane areas beginning with birth. Health, Mana, and Stamina gauges sit in a full-width strip below the masthead; their cards have compact spacing and centered text.

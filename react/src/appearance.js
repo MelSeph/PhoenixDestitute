@@ -18,7 +18,6 @@ export function defaults() {
   return { theme: 'midnight', customColors: { ...themes.midnight }, readability: Object.fromEntries(Object.entries(readabilityOptions).map(([key, setting]) => [key, setting.default])) };
 }
 const prefix = 'phoenixdestitute-';
-export const summaryKey = 'phoenix-appearance-live-summary-open';
 const isRecord = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 const own = (object, key) => Object.hasOwn(object, key);
 export const isHex = value => typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value);

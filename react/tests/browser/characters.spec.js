@@ -150,7 +150,13 @@ test('account deletion removes live data and original sign-in reclaims the archi
   const username = await register(page);
   await create(page, 'Ash');
   await page.getByRole('button', { name: 'Load Ash', exact: true }).click();
-  await page.locator('.game-entry .options-toggle').click();
+  await page.getByRole('button', { name: 'Options', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Game Options', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'You wake up in your crib', exact: true })).not.toBeVisible();
+  await page.getByRole('button', { name: 'Close', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'You wake up in your crib', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Options', exact: true }).click();
+  await page.getByText('Delete player account', { exact: true }).click();
   await page.getByLabel(`Type ${username} to confirm`, { exact: true }).fill(username);
   await page.getByLabel('Current password', { exact: true }).fill(password);
   await page.getByRole('button', { name: 'Delete account', exact: true }).click();
@@ -224,6 +230,7 @@ test('character controls and delete dialog fit at mobile 200% text', async ({ pa
   await page.goto('/');
   await page.setViewportSize({ width: 375, height: 812 });
   await page.locator('.options-toggle').click();
+  await page.getByText('Theme and Readability', { exact: true }).click();
   await page.getByLabel('Text Size', { exact: true }).selectOption('200');
   await register(page); await create(page, 'Ash');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
