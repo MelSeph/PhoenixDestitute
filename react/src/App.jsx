@@ -125,7 +125,14 @@ export default function App() {
   </details>;
 
   return <main className="prototype-container">
-    <section className="panel"><h1>PhoenixDestitute</h1><p>Your journey begins with possibility.</p></section>
+    <section className="panel masthead" aria-label="Phoenix Destitute">
+      <svg className="phoenix-mark" viewBox="0 0 96 96" role="img" aria-label="Phoenix rising from ashes">
+        <path fill="#9b4d24" d="M48 82c-14 0-25-5-33-15 10 4 19 5 27 2-7-5-12-12-13-22 7 7 14 10 21 9-6-8-8-18-5-29 4 9 10 14 17 16-1-8 2-17 9-26-2 13 1 23 8 30 6 6 8 13 6 21-2 8-10 14-23 14H48Z" />
+        <path fill="#e0a33a" d="M48 77c-10 0-18-3-24-9 8 2 15 1 21-3-6-4-9-9-10-15 6 5 11 7 17 6-4-6-5-13-3-20 3 7 8 11 14 12-1-7 1-13 5-19 0 10 3 17 8 22 5 5 6 10 3 16-3 7-12 10-25 10H48Z" />
+        <path fill="#f3d17a" d="M49 72c-6 0-10-2-14-5 6 1 10-1 13-4-4-3-6-6-6-10 4 3 7 4 11 3-2-4-2-8 0-12 2 5 5 7 9 8 0-4 1-8 4-11 0 7 2 11 5 15 3 3 3 7 0 10-3 4-10 6-19 6h-3Z" />
+        <path fill="#d7c8a0" d="M19 84c8-4 14-4 20 0 6-4 12-4 18 0 6-4 12-4 20 0-7 1-12 3-16 7-7-3-14-3-21 0-6-4-13-6-21-7Z" />
+      </svg><div><h1>Phoenix Destitute</h1><p>Your journey begins with possibility.</p></div>
+    </section>
     <CharacterManager optionsMenu={optionsMenu} />
     {picker && <ColorPicker colorKey={picker} colors={settings.customColors} onClose={() => setPicker(null)} onApply={colors => { update({ ...settings, customColors: colors }, 'Custom color applied.'); setPicker(null); }} />}
     {pendingImport && <Dialog title="Review Appearance Backup" onClose={() => setPendingImport(null)}>
