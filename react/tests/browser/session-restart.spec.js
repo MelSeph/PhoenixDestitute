@@ -18,9 +18,12 @@ test('closing and reopening a real browser profile preserves saved-character own
     await page.goto('http://127.0.0.1:5173/');
     await page.getByRole('button', { name: 'Create new account', exact: true }).click();
     await page.getByLabel('Username', { exact: true }).fill(username);
+    await page.getByLabel('Email address', { exact: true }).fill(`${username}@example.test`);
     await page.getByLabel('Password', { exact: true }).fill(password);
     await page.getByLabel('Confirm password', { exact: true }).fill(password);
     await page.getByRole('button', { name: 'Create account', exact: true }).click();
+    await page.getByLabel('Password', { exact: true }).fill(password);
+    await page.getByRole('button', { name: 'Sign in', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Load Adventurer', exact: true })).toBeVisible();
     entry = (await (await context.request.get('http://127.0.0.1:5173/api/characters/')).json()).characters[0];
     await page.getByRole('button', { name: 'Load Adventurer', exact: true }).click();

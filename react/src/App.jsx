@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import CharacterManager from './CharacterManager.jsx';
+import BirthResourceBars from './BirthResourceBars.jsx';
 import ColorPicker from './ColorPicker.jsx';
 import Dialog from './Dialog.jsx';
 import { applyAppearance, backup, colorLabels, customizationCount, defaults, loadAppearance, readabilityOptions, saveAppearance, summary, summaryKey, themeLabels, validateBackup } from './appearance.js';
@@ -28,6 +29,7 @@ export default function App() {
   const [pendingImport, setPendingImport] = useState(null);
   const [undo, setUndo] = useState(null);
   const [summaryOpen, setSummaryOpen] = useState(initialSummaryOpen);
+  const [currentCharacter, setCurrentCharacter] = useState(null);
   useEffect(() => { applyAppearance(settings, document.documentElement); }, [settings]);
 
   function update(next, success, requireStorage = false) {
@@ -133,7 +135,8 @@ export default function App() {
         <path fill="#d7c8a0" d="M19 84c8-4 14-4 20 0 6-4 12-4 18 0 6-4 12-4 20 0-7 1-12 3-16 7-7-3-14-3-21 0-6-4-13-6-21-7Z" />
       </svg><div><h1>Phoenix Destitute</h1><p>Your journey begins with possibility.</p></div>
     </section>
-    <CharacterManager optionsMenu={optionsMenu} />
+    <BirthResourceBars characterId={currentCharacter?.id} visible={currentCharacter?.kind === 'birth'} />
+    <CharacterManager optionsMenu={optionsMenu} onCurrentChange={setCurrentCharacter} />
     {picker && <ColorPicker colorKey={picker} colors={settings.customColors} onClose={() => setPicker(null)} onApply={colors => { update({ ...settings, customColors: colors }, 'Custom color applied.'); setPicker(null); }} />}
     {pendingImport && <Dialog title="Review Appearance Backup" onClose={() => setPendingImport(null)}>
       <p>{comparison.filter(([, before, after]) => before !== after).length} of 15 settings will change. Nothing changes until you confirm.</p>

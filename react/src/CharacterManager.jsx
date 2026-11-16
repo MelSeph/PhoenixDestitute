@@ -1,11 +1,15 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { cloneElement, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import BirthCreationPanel from './BirthCreationPanel.jsx';
 import Dialog from './Dialog.jsx';
 
 async function request(url, options = {}) {
   const response = await fetch(url, { credentials: 'same-origin', ...options });
   const body = await response.json().catch(() => null);
-  if (!response.ok) throw new Error(body?.error ?? `HTTP ${response.status}`);
+  if (!response.ok) {
+    const fieldErrors = Object.entries(body?.field_errors ?? {}).flatMap(([field, errors]) =>
+      (Array.isArray(errors) ? errors : [errors]).map(error => `${field}: ${error}`));
+    throw new Error([body?.error ?? `HTTP ${response.status}`, ...fieldErrors].join(' '));
+  }
   return body;
 }
 function csrfToken() {
@@ -13,13 +17,16 @@ function csrfToken() {
   return cookie ? decodeURIComponent(cookie.slice('csrftoken='.length)) : '';
 }
 
-export default function CharacterManager({ optionsMenu }) {
+export default function CharacterManager({ optionsMenu, onCurrentChange }) {
   const [roster, setRoster] = useState(null);
   const [account, setAccount] = useState(null);
   const [accountMode, setAccountMode] = useState('login');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [password2, setPassword2] = useState('');
+  const [email, setEmail] = useState('');
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleteConfirmation, setDeleteConfirmation] = useState('');
   const [accountMessage, setAccountMessage] = useState('');
   const [busy, setBusy] = useState(true);
   const [ready, setReady] = useState(false);
@@ -43,6 +50,7 @@ export default function CharacterManager({ optionsMenu }) {
         request('/api/characters/', { signal }), request('/api/account/', { signal }),
       ]);
       setRoster(characters); setAccount(accountState);
+      onCurrentChange?.(characters.current);
       setScreen(!accountState.authenticated ? 'landing' : characters.current ? 'game' : 'selection');
       setCreating(false); setCharacterSheetOpen(false); setReady(true); setMessage('Saved characters loaded.');
     }
@@ -72,6 +80,7 @@ export default function CharacterManager({ optionsMenu }) {
         method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken() }, body: JSON.stringify(body),
       });
       setRoster(characters);
+      onCurrentChange?.(characters.current);
       if (action === 'load') { setScreen('game'); setCreating(false); setCharacterSheetOpen(false); }
       if (action === 'new') { setScreen('selection'); setCreating(true); }
       setViewKey(key => key + 1); setChildState({ busy: false, dirty: false });
@@ -115,16 +124,20 @@ export default function CharacterManager({ optionsMenu }) {
       if (!csrfToken()) throw new Error('Cookies are required for player accounts.');
       const logoutAction = account?.authenticated;
       const action = logoutAction ? 'logout' : accountMode;
-      const body = logoutAction ? {} : action === 'register' ? { username, password1: password, password2 } : { username, password };
+      const body = logoutAction ? {} : action === 'register' ? { username, email, password1: password, password2 } : { username, password };
       const result = await request(`/api/account/${action}/`, {
         method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken() }, body: JSON.stringify(body),
       });
+      const accountResult = action === 'register' ? await request('/api/account/logout/', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken() }, body: JSON.stringify({}),
+      }) : result;
       const characters = await request('/api/characters/');
-      setAccount(result); setRoster(characters); setPassword(''); setPassword2('');
-      setScreen(!result.authenticated ? 'landing' : characters.current ? 'game' : 'selection');
+      setAccount(accountResult); setRoster(characters); onCurrentChange?.(characters.current); setPassword(''); setPassword2('');
+      if (action === 'register') { setAccountMode('login'); setAccountMessage('Account created. Sign in with your new username and password.'); }
+      setScreen(!accountResult.authenticated ? 'landing' : characters.current ? 'game' : 'selection');
       setCreating(false); setCharacterSheetOpen(false);
       setViewKey(key => key + 1); setChildState({ busy: false, dirty: false }); setReady(true);
-      setMessage(result.authenticated ? 'Your account characters are ready in this browser.' : 'Signed out.');
+      setMessage(action === 'register' ? 'Account created. Please sign in.' : accountResult.authenticated ? 'Your account characters are ready in this browser.' : 'Signed out.');
     } catch (error) {
       setAccountMessage(error.message);
       setReady(true);
@@ -132,6 +145,59 @@ export default function CharacterManager({ optionsMenu }) {
   }
   const locked = busy || !ready || childState.busy;
   const current = roster?.current;
+  async function deleteAccount(event) {
+    event.preventDefault();
+    if (pending.current || !csrfToken()) return;
+    pending.current = true; setBusy(true);
+    try {
+      const result = await request('/api/account/delete/', { method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken() },
+        body: JSON.stringify({ password: deletePassword, confirmation: deleteConfirmation }) });
+      setAccount({ authenticated: false }); setRoster({ characters: [], current: null });
+      onCurrentChange?.(null); setScreen('landing'); setAccountMode('login'); setAccountMessage(result.message);
+      setPassword(''); setDeletePassword(''); setDeleteConfirmation('');
+    } catch (error) { setAccountMessage(error.message); }
+    finally { pending.current = false; setBusy(false); }
+  }
+  const accountOptions = account?.authenticated ? cloneElement(optionsMenu, {}, <>
+    {optionsMenu.props.children}
+    <section className="setting-section account-deletion" aria-label="Delete player account">
+      <h3>Delete player account</h3>
+      <p>Your account and live character records will be removed. You can reclaim them by signing in with your current username and password within two years.</p>
+      <form onSubmit={deleteAccount}>
+        <label htmlFor="delete-account-username">Type {account.username} to confirm</label>
+        <input id="delete-account-username" value={deleteConfirmation} onChange={event => setDeleteConfirmation(event.target.value)} autoComplete="off" required />
+        <label htmlFor="delete-account-password">Current password</label>
+        <input id="delete-account-password" type="password" value={deletePassword} onChange={event => setDeletePassword(event.target.value)} autoComplete="current-password" required />
+        <button disabled={locked || deleteConfirmation !== account.username}>Delete account</button>
+      </form>
+      {accountMessage && <p role="alert">{accountMessage}</p>}
+    </section>
+  </>) : optionsMenu;
+  useLayoutEffect(() => {
+    if (screen !== 'game') return undefined;
+    const screenElement = document.querySelector('.game-screen');
+    const left = screenElement?.querySelector('.game-tools');
+    const right = [...(screenElement?.querySelectorAll('.game-entry, .character-sheet-panel .birth-creation') ?? [])]
+      .find(element => getComputedStyle(element).display !== 'none');
+    if (!left || !right) return undefined;
+    const matchHeight = () => { left.style.height = `${right.getBoundingClientRect().height}px`; };
+    const observer = new ResizeObserver(matchHeight);
+    observer.observe(right);
+    matchHeight();
+    return () => { observer.disconnect(); left.style.removeProperty('height'); };
+  }, [screen, characterSheetOpen, current?.id, viewKey]);
+  useEffect(() => {
+    if (screen !== 'game') return undefined;
+    const record = () => {
+      if (document.visibilityState !== 'visible') return;
+      fetch('/api/account/activity/', { method: 'POST', credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken() },
+        body: JSON.stringify({ seconds: 60 }) }).catch(() => {});
+    };
+    const timer = window.setInterval(record, 60_000);
+    return () => window.clearInterval(timer);
+  }, [screen, current?.id]);
   if (screen === 'loading') return <section className="panel"><p role="status">Loading account…</p></section>;
 
   if (screen === 'landing') return <section className="panel account-landing" aria-labelledby="account-heading">
@@ -142,28 +208,48 @@ export default function CharacterManager({ optionsMenu }) {
       <label htmlFor="account-password">Password</label>
       <input id="account-password" type="password" autoComplete={accountMode === 'login' ? 'current-password' : 'new-password'} value={password} onChange={event => setPassword(event.target.value)} required />
       {accountMode === 'register' && <>
+        <p>Create a player account to save characters across browsers.</p>
+        <label htmlFor="account-email">Email address</label>
+        <input id="account-email" type="email" autoComplete="email" value={email} onChange={event => setEmail(event.target.value)} required />
+        <p className="help">Email verification is not enabled yet.</p>
         <p className="help">Use at least 10 characters; avoid common or numeric-only passwords.</p>
         <label htmlFor="account-password-confirm">Confirm password</label>
         <input id="account-password-confirm" type="password" autoComplete="new-password" value={password2} onChange={event => setPassword2(event.target.value)} required />
       </>}
       <div className="actions account-actions" aria-label="Account actions">
-        <button type={accountMode === 'login' ? 'submit' : 'button'} disabled={locked} onClick={() => { if (accountMode !== 'login') { setAccountMode('login'); setAccountMessage(''); } }}>
+        {accountMode === 'login' ? <button type="submit" disabled={locked}>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5m5 5H3" /></svg>Sign in
-        </button>
-        <button type={accountMode === 'register' ? 'submit' : 'button'} className="secondary" aria-label={accountMode === 'register' ? 'Create account' : 'Create new account'} disabled={locked} onClick={() => { if (accountMode !== 'register') { setAccountMode('register'); setAccountMessage(''); } }}>
+        </button> : <button type="button" className="secondary" onClick={() => { setAccountMode('login'); setAccountMessage(''); setPassword(''); setPassword2(''); }}>Back to sign in</button>}
+        {accountMode === 'register' ? <button type="submit" disabled={locked}>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14m-7-7h14" /></svg>Create account
+        </button> : <button type="button" className="secondary" aria-label="Create new account" disabled={locked} onClick={() => { setAccountMode('register'); setAccountMessage(''); setPassword(''); setPassword2(''); }}>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14m-7-7h14" /></svg>{accountMode === 'register' ? 'Create account' : 'Create new'}
-        </button>
+        </button>}
       </div>
     </form>
     {accountMessage && <p role="alert">{accountMessage}</p>}
     <p className="help">Your characters are saved to your account and can be loaded from another browser.</p>
   </section>;
 
-  if (screen === 'game') return <>
+  if (screen === 'game') return <div className="game-area"><div className={`game-screen${characterSheetOpen ? ' sheet-open' : ''}`}>
+    <aside className="panel game-tools" aria-label="Character tools">
+      {current?.kind === 'birth' && <button type="button" aria-expanded={characterSheetOpen} aria-controls="character-sheet"
+        className="icon-button sheet-toggle" aria-label={characterSheetOpen ? 'Hide character sheet' : 'Show character sheet'}
+        title={characterSheetOpen ? 'Hide character sheet' : 'Show character sheet'}
+        onClick={() => setCharacterSheetOpen(open => !open)}>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h11l3 3v15H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" /><path d="M8 3v18M11 8h6M11 12h6M11 16h4M17 3v4h3" /></svg>
+      </button>}
+    </aside>
     <section className="panel game-entry" aria-labelledby="game-heading">
-      <div className="section-heading"><span />{optionsMenu}</div>
-      <div className="actions"><button className="secondary" disabled={busy || childState.busy} onClick={() => { setScreen('selection'); setCreating(false); }}>Choose another character</button>
-        <button className="secondary" disabled={busy || childState.busy} onClick={() => accountAction()}>Sign out</button></div>
+      <div className="game-controls"><div className="game-control-icons">
+        <button type="button" className="icon-button secondary" aria-label="Sign out" title="Sign out"
+          disabled={busy || childState.busy} onClick={() => accountAction()}>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17l5-5-5-5m5 5H3M13 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6" /></svg>
+        </button>
+        {accountOptions}
+      </div>
+        <button className="secondary" disabled={busy || childState.busy} onClick={() => { setScreen('selection'); setCreating(false); }}>Choose another character</button>
+      </div>
       {current?.kind === 'birth' ? <>
         <h2 id="game-heading">You wake up in your crib</h2>
         <p>Your first moments begin as a newborn. Your choices and starting attributes are ready below.</p>
@@ -172,20 +258,14 @@ export default function CharacterManager({ optionsMenu }) {
         <p>Your saved story is loaded. Birth details are unavailable for this older character.</p>
       </>}
     </section>
-    {current?.kind === 'birth' && <>
-      <button type="button" aria-expanded={characterSheetOpen} aria-controls="character-sheet"
-        onClick={() => setCharacterSheetOpen(open => !open)}>
-        {characterSheetOpen ? 'Hide character sheet' : 'Show character sheet'}
-      </button>
-      {characterSheetOpen && <div id="character-sheet"><BirthCreationPanel key={`${current.id}-${viewKey}`} readUrl="/api/characters/current/"
-        disabled={busy || !ready} onConfirmed={reload} onStateChange={reportState} /></div>}
-    </>}
+    {current?.kind === 'birth' && characterSheetOpen && <div id="character-sheet" className="character-sheet-panel"><BirthCreationPanel key={`${current.id}-${viewKey}`} readUrl="/api/characters/current/"
+      disabled={busy || !ready} onConfirmed={reload} onStateChange={reportState} /></div>}
     {current?.kind === 'legacy' && <section className="panel"><h2>{current.name}</h2><p>Level {current.level} · Experience {current.experience}</p></section>}
-  </>;
+  </div></div>;
 
   return <>
     <section className="panel" aria-labelledby="characters-heading" aria-label="Your characters">
-      <div className="section-heading"><h2 id="characters-heading">Choose a character</h2>{optionsMenu}</div>
+      <div className="section-heading"><h2 id="characters-heading">Choose a character</h2>{accountOptions}</div>
       <div className="actions"><p>Signed in as <strong>{account?.username}</strong></p>
         <button className="secondary" disabled={busy || childState.busy} onClick={() => accountAction()}>Sign out</button></div>
       <p role="status">{message}</p>

@@ -7,10 +7,13 @@ function nextUsername() { accountNumber++; return `player-${Date.now()}-${accoun
 async function register(page, username = nextUsername()) {
   await page.getByRole('button', { name: 'Create new account', exact: true }).click();
   await page.getByLabel('Username', { exact: true }).fill(username);
+  await page.getByLabel('Email address', { exact: true }).fill(`${username}@example.test`);
   await page.getByLabel('Password', { exact: true }).fill(password);
   await page.getByLabel('Confirm password', { exact: true }).fill(password);
   await page.getByRole('button', { name: 'Create account', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Choose a character', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Sign in', exact: true })).toBeVisible();
+  await expect(page.getByRole('status')).toContainText('Account created. Please sign in.');
+  await signIn(page, username);
   return username;
 }
 
@@ -41,6 +44,15 @@ async function create(page, name) {
   await expect(page.getByRole('heading', { name: `${name} · Newborn`, exact: true })).not.toBeVisible();
   await page.getByRole('button', { name: 'Choose another character', exact: true }).click();
   await expect(page.getByRole('button', { name: `Load ${name}`, exact: true })).toBeEnabled();
+}
+
+async function expectPanesMatch(page) {
+  await expect.poll(async () => page.evaluate(() => {
+    const left = document.querySelector('.game-tools')?.getBoundingClientRect();
+    const rightElement = [...document.querySelectorAll('.game-entry, .character-sheet-panel .birth-creation')].find(element => getComputedStyle(element).display !== 'none');
+    const right = rightElement?.getBoundingClientRect();
+    return left && right ? Math.abs(left.height - right.height) : null;
+  })).toBeLessThanOrEqual(1);
 }
 
 test('landing stays focused on account access and options until sign-in', async ({ page }) => {
@@ -76,8 +88,10 @@ test('create two characters, load either, and retain the selection across refres
   expect(second.birth.character_id).not.toBe(first.birth.character_id);
   await page.getByRole('button', { name: 'Load Ash', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'You wake up in your crib', exact: true })).toBeVisible();
+  await expectPanesMatch(page);
   await expect(page.getByRole('button', { name: 'Show character sheet', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Show character sheet', exact: true }).click();
+  await expectPanesMatch(page);
   await expect(page.getByRole('heading', { name: 'Ash · Newborn', exact: true })).toBeVisible();
   await expect(page.getByLabel('Strength value', { exact: true })).toHaveText(String(first.stats.strength));
   await page.reload();
@@ -109,6 +123,19 @@ test('delete requires the exact name, can be cancelled, and removes the selected
   await expect(page.getByRole('button', { name: 'Create a character', exact: true })).toBeVisible();
   await page.reload();
   await expect(page.getByRole('button', { name: 'Load Ash', exact: true })).not.toBeVisible();
+});
+
+test('account deletion removes live data and original sign-in reclaims the archived character', async ({ page }) => {
+  const username = await register(page);
+  await create(page, 'Ash');
+  await page.getByRole('button', { name: 'Load Ash', exact: true }).click();
+  await page.locator('.game-entry .options-toggle').click();
+  await page.getByLabel(`Type ${username} to confirm`, { exact: true }).fill(username);
+  await page.getByLabel('Current password', { exact: true }).fill(password);
+  await page.getByRole('button', { name: 'Delete account', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Sign in', exact: true })).toBeVisible();
+  await signIn(page, username);
+  await expect(page.getByRole('button', { name: 'Load Ash', exact: true })).toBeVisible();
 });
 
 test('deleting an inactive character keeps the loaded character available', async ({ page }) => {

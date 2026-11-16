@@ -24,3 +24,7 @@ All **34 browser scenarios pass** across the complete run and isolated reruns, c
 ## Compact controls and section options — 2026-11-15
 
 The player requested smaller, icon-based controls; one Sign in action plus Create new below the username/password fields; and an Options control at the upper right of account and character sections. Options appears in the sign-in, character-selection, and current game-entry sections; its gear icon keeps an accessible Options label. Character roster load/delete controls use compact icons with accessible names. Account actions remain labeled and include sign-in/add icons. The game-entry placement is being used as the closest current React section to the user's “Console” wording; the application does not currently name a component Console.
+
+## Pane sizing and birth resource strip — 2026-11-16
+
+For paired left/right game panes, the left pane height must track the **visible content pane**, including when toggling from the crib to the character sheet. Measure the visible right pane, not its wrapper or a hidden pane. Apply this rule to future paired-pane areas beginning with birth. Health, Mana, and Stamina gauges sit in a full-width strip below the masthead; their cards have compact spacing and centered text.

@@ -8,6 +8,8 @@ from django.urls import reverse
 
 from .character_recovery import issue_recovery_code
 from .models import BirthStatDraft, LocalCharacter, Player, PlaythroughSave
+from .models import DeletedAccountArchive, AccountRecoveryEvent, AccountDepartureMetric
+from .models import BirthRecord, EquipmentDefinition, InventoryItem
 from .tests_birth_confirmation import identity
 
 
@@ -20,7 +22,8 @@ class PlayerAccountApiTests(TestCase):
 
     def register(self, client, username):
         return self.post(client, "api-account-register", {
-            "username": username, "password1": PASSWORD, "password2": PASSWORD,
+            "username": username, "email": f"{username}@example.test",
+            "password1": PASSWORD, "password2": PASSWORD,
         })
 
     def login(self, client, username):
@@ -153,17 +156,112 @@ class PlayerAccountApiTests(TestCase):
 
     def test_registration_passwords_are_validated_and_failed_login_is_generic(self):
         short = self.post(self.client, "api-account-register", {
-            "username": "weak", "password1": "123", "password2": "123",
+            "username": "weak", "email": "weak@example.test", "password1": "123", "password2": "123",
         })
         self.assertEqual(short.status_code, 400)
         self.assertFalse(get_user_model().objects.filter(username="weak").exists())
         self.assertEqual(self.login(self.client, "missing-user").json()["error"], "Username or password is incorrect.")
         self.assertEqual(get_user_model().objects.count(), 0)
 
+    def test_account_deletion_archives_then_original_credentials_restore_characters_and_saves(self):
+        self.client.post(reverse("api-player-create"))
+        player_id = self.client.session["active_player_id"]
+        LocalCharacter.objects.get_or_create(player_id=player_id,
+            defaults={"session_id": self.client.session.session_key})
+        self.assertEqual(self.register(self.client, "returning-player").status_code, 200)
+        self.post(self.client, "api-game-save", {"chapter": "crib", "gold": 12})
+        activity = self.post(self.client, "api-account-activity", {"seconds": 60})
+        self.assertEqual(activity.status_code, 200, activity.content)
+        user = get_user_model().objects.get(username="returning-player")
+        user.email = "not-a-real-mailbox@example.test"
+        user.save(update_fields=["email"])
+
+        deleted = self.post(self.client, "api-account-delete", {
+            "password": PASSWORD, "confirmation": "returning-player",
+        })
+        self.assertEqual(deleted.status_code, 200, deleted.content)
+        self.assertFalse(get_user_model().objects.filter(username="returning-player").exists())
+        self.assertFalse(Player.objects.filter(pk=player_id).exists())
+        archive = DeletedAccountArchive.objects.get(username="returning-player")
+        self.assertEqual(archive.email, "not-a-real-mailbox@example.test")
+        self.assertGreaterEqual((archive.expires_at - archive.deleted_at).days, 729)
+        self.assertEqual(archive.play_seconds, 60)
+        self.assertEqual(archive.progress["character_count"], 1)
+        self.assertEqual(self.register(Client(), "returning-player").status_code, 409)
+
+        returning = Client()
+        restored = self.login(returning, "returning-player")
+        self.assertEqual(restored.status_code, 200, restored.content)
+        restored_user = get_user_model().objects.get(username="returning-player")
+        self.assertEqual(restored_user.email, "not-a-real-mailbox@example.test")
+        self.assertEqual(Player.objects.filter(account=restored_user).count(), 1)
+        roster = returning.get(reverse("api-characters")).json()["characters"]
+        self.assertEqual(len(roster), 1)
+        self.post(returning, "api-character-load", {"character_id": roster[0]["id"]})
+        self.assertEqual(returning.get(reverse("api-game-load")).json()["data"], {"chapter": "crib", "gold": 12})
+        self.assertFalse(DeletedAccountArchive.objects.exists())
+        self.assertEqual(AccountRecoveryEvent.objects.count(), 1)
+        metric = AccountDepartureMetric.objects.get()
+        self.assertIsNotNone(metric.reclaimed_at)
+        self.assertIsNone(metric.archive_id)
+        self.assertEqual(metric.play_seconds, 60)
+
+    def test_account_deletion_requires_password_and_username(self):
+        self.register(self.client, "guarded-player")
+        response = self.post(self.client, "api-account-delete", {
+            "password": "wrong", "confirmation": "guarded-player",
+        })
+        self.assertEqual(response.status_code, 400)
+        self.assertTrue(get_user_model().objects.filter(username="guarded-player").exists())
+
+    def test_expired_recovery_archive_is_automatically_purged_on_account_request(self):
+        self.register(self.client, "expired-player")
+        self.post(self.client, "api-account-delete", {"password": PASSWORD, "confirmation": "expired-player"})
+        archive = DeletedAccountArchive.objects.get(username="expired-player")
+        archive.expires_at = archive.deleted_at
+        archive.save(update_fields=["expires_at"])
+        self.client.get(reverse("api-account"))
+        self.assertFalse(DeletedAccountArchive.objects.filter(pk=archive.pk).exists())
+        metric = AccountDepartureMetric.objects.get()
+        self.assertIsNotNone(metric.purged_at)
+        self.assertIsNone(metric.archive_id)
+
+    def test_reclaim_preserves_confirmed_birth_and_item_identity(self):
+        self.register(self.client, "birth-returner")
+        draft = self.post(self.client, "api-birth-stats", {}).json()["draft"]
+        birth_identity = {**identity(), "name": "Mira"}
+        update = self.post(self.client, "api-birth-identity", {
+            "revision": draft["revision"], "identity": birth_identity,
+        })
+        confirmed = self.post(self.client, "api-birth-confirm", {
+            "revision": update.json()["draft"]["revision"],
+        })
+        self.assertEqual(confirmed.status_code, 201, confirmed.content)
+        player = Player.objects.get(account__username="birth-returner")
+        life = player.legacy.playthroughs.get(status="active")
+        definition = EquipmentDefinition.objects.create(key="heirloom-rattle")
+        item = InventoryItem.objects.create(playthrough=life, definition_key=definition.key,
+            equipment_definition=definition, kind="equipment", quantity=1,
+            properties={"instance": "unique-rattle", "durability": 8, "max_durability": 10},
+            location="carried", slot=0)
+        item_id = item.pk
+        self.post(self.client, "api-account-delete", {"password": PASSWORD, "confirmation": "birth-returner"})
+
+        returning = Client()
+        restored = self.login(returning, "birth-returner")
+        self.assertEqual(restored.status_code, 200, restored.content)
+        restored_player = Player.objects.get(account__username="birth-returner")
+        restored_life = restored_player.legacy.playthroughs.get(status="active")
+        restored_birth = BirthRecord.objects.get(playthrough=restored_life)
+        self.assertEqual(restored_birth.identity["name"], "Mira")
+        restored_item = InventoryItem.objects.get(playthrough=restored_life)
+        self.assertEqual(restored_item.pk, item_id)
+        self.assertEqual(restored_item.properties, {"instance": "unique-rattle", "durability": 8, "max_durability": 10})
+
     def test_registration_and_logout_require_csrf(self):
         client = Client(enforce_csrf_checks=True)
         client.get(reverse("game-home"))
-        body = {"username": "csrf-user", "password1": PASSWORD, "password2": PASSWORD}
+        body = {"username": "csrf-user", "email": "csrf@example.test", "password1": PASSWORD, "password2": PASSWORD}
         self.assertEqual(self.post(client, "api-account-register", body).status_code, 403)
         token = client.cookies["csrftoken"].value
         response = client.post(reverse("api-account-register"), json.dumps(body),

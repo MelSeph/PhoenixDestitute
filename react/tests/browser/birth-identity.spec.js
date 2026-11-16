@@ -9,9 +9,12 @@ async function start(page, { mobile = false } = {}) {
   }
   await page.getByRole('button', { name: 'Create new account', exact: true }).click();
   await page.getByLabel('Username', { exact: true }).fill(`identity-${Date.now()}`);
+  await page.getByLabel('Email address', { exact: true }).fill(`identity-${Date.now()}@example.test`);
   await page.getByLabel('Password', { exact: true }).fill('A-Secure-Player-Password-938!');
   await page.getByLabel('Confirm password', { exact: true }).fill('A-Secure-Player-Password-938!');
   await page.getByRole('button', { name: 'Create account', exact: true }).click();
+  await page.getByLabel('Password', { exact: true }).fill('A-Secure-Player-Password-938!');
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Choose a character', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Create a character', exact: true }).click();
   const response = page.waitForResponse(response => response.url().endsWith('/api/creation/stats/') && response.request().method() === 'POST');

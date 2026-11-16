@@ -16,6 +16,8 @@
 
 **Account-first game opening:** The user requested an account/options landing screen, character selection and creation after sign-in, then game entry after loading or confirming a character. Newborns wake in their crib. See [33-account-first-game-opening.md](33-account-first-game-opening.md). No migration or legacy-game edits.
 
+**Account email, deletion, and recovery:** The user approved collecting an unverified email address, archiving player-deleted accounts for two years, recovery through original username/password until email verification is ready, and superuser-only manual purge of deleted archives. Expired archives are cleaned by account requests and the management command; departure metrics survive without personal identifiers. See [34-player-account-recovery-and-retention.md](34-player-account-recovery-and-retention.md). Migrations 0022–0026 are applied locally. No commit/push requested.
+
 The equipment-adaptation preference is now persisted through a session-scoped API, defaulting to player-controlled timing: [15-game-settings.md](15-game-settings.md). Migration 0010 is applied locally and the full suite has 113 passing tests. Automatic adaptation/scoring remains unimplemented; the preference alone does not change gear.
 
 ## Read next

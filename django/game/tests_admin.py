@@ -40,6 +40,11 @@ class GameAdminTests(TestCase):
         models.EquippedPosition.objects.create(item=item, playthrough=life, position="main_hand")
         snapshot = models.DeathSnapshot.objects.create(playthrough=life)
         models.DeathSnapshotEntry.objects.create(snapshot=snapshot, item=item, slot=0, quantity=1, properties={})
+        models.DeletedAccountArchive.objects.create(username="archived-player", email="archive@example.test",
+            password_hash="!", snapshot={}, expires_at=timezone.now() + timedelta(days=365))
+        models.AccountRecoveryEvent.objects.create()
+        models.AccountDepartureMetric.objects.create(play_seconds=120,
+            progress={"character_count": 1, "highest_level": 1})
 
     def setUp(self):
         self.login(self.user)
@@ -80,7 +85,8 @@ class GameAdminTests(TestCase):
                 self.assertEqual(self.client.post(self.url(model, "change", obj), {"name": "Changed", "_save": "Save"}).status_code, 403)
                 self.assertEqual(self.client.post(self.url(model, "delete", obj), {"post": "yes"}).status_code, 403)
                 self.assertEqual(list(model.objects.values()), before)
-                self.assertNotContains(self.client.get(self.url(model)), 'value="delete_selected"')
+                if model is not models.DeletedAccountArchive:
+                    self.assertNotContains(self.client.get(self.url(model)), 'value="permanently_purge"')
 
     def test_only_existing_equipment_preference_can_be_changed(self):
         setting = models.PlayerGameSettings.objects.get()
@@ -90,6 +96,20 @@ class GameAdminTests(TestCase):
         self.assertTrue(setting.auto_adapt_equipment)
         self.assertEqual(self.client.post(self.url(models.PlayerGameSettings, "add"), {}).status_code, 403)
         self.assertEqual(self.client.post(self.url(models.PlayerGameSettings, "delete", setting), {"post": "yes"}).status_code, 403)
+
+    def test_admin_can_purge_deleted_archive_but_archive_action_has_no_active_account_target(self):
+        archive = models.DeletedAccountArchive.objects.get(username="archived-player")
+        response = self.client.post(self.url(models.DeletedAccountArchive), {
+            "action": "permanently_purge", "_selected_action": [archive.pk], "index": "0",
+        })
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(models.DeletedAccountArchive.objects.filter(pk=archive.pk).exists())
+        self.assertTrue(get_user_model().objects.filter(username="admin-test").exists())
+        active = get_user_model().objects.create_user(username="active-player")
+        user_admin = admin.site._registry[get_user_model()]
+        request = self.client.request().wsgi_request
+        request.user = self.user
+        self.assertFalse(user_admin.has_delete_permission(request, active))
 
     def test_session_credentials_are_masked_on_lists_and_details(self):
         for model in [models.LocalCharacter, models.BirthStatDraft]:

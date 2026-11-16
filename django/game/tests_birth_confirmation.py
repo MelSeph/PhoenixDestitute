@@ -230,7 +230,8 @@ class BirthConfirmationTests(TestCase):
         self.assertEqual(self.post(self.confirm_url, {}, protected).status_code, 403)
         password = "A-Secure-Player-Password-938!"
         response = self.post(reverse("api-account-register"), {
-            "username": "birth-account", "password1": password, "password2": password,
+            "username": "birth-account", "email": "birth@example.test",
+            "password1": password, "password2": password,
         })
         self.assertEqual(response.status_code, 200, response.content)
         updated = self.post(self.identity_url, {"revision": self.draft["revision"], "identity": identity()})

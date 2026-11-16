@@ -28,6 +28,7 @@ class Player(models.Model):
         null=True,
         blank=True,
     )
+    play_seconds = models.PositiveIntegerField(default=0)
     # Compatibility owner of the continuing story while legacy Player/GameSave APIs remain.
     # The active Playthrough identifies the current Character; do not duplicate that link here.
     legacy = models.OneToOneField(
@@ -77,6 +78,43 @@ class PlayerGameSettings(models.Model):
 
     player = models.OneToOneField(Player, on_delete=models.CASCADE, related_name="game_settings")
     auto_adapt_equipment = models.BooleanField(default=False)
+
+
+class DeletedAccountArchive(models.Model):
+    """Recoverable account and game snapshot retained for two years."""
+
+    username = models.CharField(max_length=150, unique=True)
+    email = models.EmailField(blank=True)
+    password_hash = models.CharField(max_length=128)
+    snapshot = models.JSONField(default=dict)
+    deleted_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    play_seconds = models.PositiveIntegerField(default=0)
+    progress = models.JSONField(default=dict, blank=True)
+    recovery_attempts = models.PositiveIntegerField(default=0)
+
+    def __str__(self):
+        return self.username
+
+
+class AccountRecoveryEvent(models.Model):
+    """Recovery totals retained after an account is reclaimed."""
+
+    reclaimed_at = models.DateTimeField(auto_now_add=True)
+    recovery_attempts = models.PositiveIntegerField(default=1)
+
+
+class AccountDepartureMetric(models.Model):
+    """De-identified retention statistics that outlive recovery archive purges."""
+
+    archive = models.OneToOneField(DeletedAccountArchive, null=True, blank=True,
+                                   on_delete=models.SET_NULL, related_name="metrics")
+    deleted_at = models.DateTimeField(auto_now_add=True)
+    reclaimed_at = models.DateTimeField(null=True, blank=True)
+    purged_at = models.DateTimeField(null=True, blank=True)
+    play_seconds = models.PositiveIntegerField(default=0)
+    progress = models.JSONField(default=dict, blank=True)
+    recovery_attempts = models.PositiveIntegerField(default=0)
 
 
 class GameSave(models.Model):

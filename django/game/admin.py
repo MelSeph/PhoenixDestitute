@@ -1,10 +1,24 @@
 """Inspection screens for service-owned game state; no lifecycle bypasses."""
 from django.contrib import admin
+from django.contrib.auth import get_user_model
+from django.contrib.auth.admin import UserAdmin
 from django.contrib import messages
 from django.core.exceptions import ValidationError
 
 from . import models
+from .account_lifecycle import purge_archive
 from .character_recovery import issue_recovery_code
+
+
+class ActiveAccountAdmin(UserAdmin):
+    """Keep active account deletion out of Django's built-in user controls."""
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+admin.site.unregister(get_user_model())
+admin.site.register(get_user_model(), ActiveAccountAdmin)
 
 
 class ReadOnlyAdmin(admin.ModelAdmin):
@@ -23,6 +37,38 @@ class ReadOnlyAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+
+@admin.register(models.DeletedAccountArchive)
+class DeletedAccountArchiveAdmin(ReadOnlyAdmin):
+    actions = ["permanently_purge"]
+    list_display = ("username", "email", "deleted_at", "expires_at")
+    search_fields = ("username", "email")
+    list_filter = ("deleted_at", "expires_at")
+    fields = ("username", "email", "deleted_at", "expires_at", "play_seconds", "progress", "recovery_attempts", "snapshot")
+
+    @admin.action(permissions=["purge"], description="Permanently purge selected deleted accounts")
+    def permanently_purge(self, request, queryset):
+        archives = list(queryset)
+        for archive in archives:
+            purge_archive(archive)
+        count = len(archives)
+        self.message_user(request, f"Permanently purged {count} deleted account archive(s).", messages.SUCCESS)
+
+    def has_purge_permission(self, request):
+        return request.user.is_superuser
+
+
+@admin.register(models.AccountRecoveryEvent)
+class AccountRecoveryEventAdmin(ReadOnlyAdmin):
+    list_display = ("reclaimed_at", "recovery_attempts")
+    date_hierarchy = "reclaimed_at"
+
+
+@admin.register(models.AccountDepartureMetric)
+class AccountDepartureMetricAdmin(ReadOnlyAdmin):
+    list_display = ("deleted_at", "play_seconds", "reclaimed_at", "purged_at", "recovery_attempts")
+    date_hierarchy = "deleted_at"
 
 
 class ReadOnlyInline(admin.TabularInline):

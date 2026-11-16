@@ -20,6 +20,11 @@ test.beforeEach(async ({ context, page }) => {
     signedInAs = route.request().postDataJSON().username;
     await route.fulfill({ json: { success: true, authenticated: true, username: signedInAs } });
   });
+  await page.route('**/api/account/logout/', route => { signedInAs = null; return route.fulfill({ json: { success: true, authenticated: false } }); });
+  await page.route('**/api/account/login/', async route => {
+    signedInAs = route.request().postDataJSON().username;
+    await route.fulfill({ json: { success: true, authenticated: true, username: signedInAs } });
+  });
   await page.route('**/api/characters/', route => route.fulfill({ json: { success: true, characters: [], current: null } }));
   await page.route('**/api/characters/new/', route => route.fulfill({ json: { success: true, characters: [], current: null } }));
 });
@@ -27,9 +32,12 @@ test.beforeEach(async ({ context, page }) => {
 async function signUpAndStart(page) {
   await page.getByRole('button', { name: 'Create new account', exact: true }).click();
   await page.getByLabel('Username', { exact: true }).fill(`birth-${Date.now()}`);
+  await page.getByLabel('Email address', { exact: true }).fill(`birth-${Date.now()}@example.test`);
   await page.getByLabel('Password', { exact: true }).fill('A-Secure-Player-Password-938!');
   await page.getByLabel('Confirm password', { exact: true }).fill('A-Secure-Player-Password-938!');
   await page.getByRole('button', { name: 'Create account', exact: true }).click();
+  await page.getByLabel('Password', { exact: true }).fill('A-Secure-Player-Password-938!');
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Choose a character', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Create a character', exact: true }).click();
 }
