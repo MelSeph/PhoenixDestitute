@@ -1,4 +1,4 @@
-import React, { cloneElement, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import React, { cloneElement, useCallback, useEffect, useRef, useState } from 'react';
 import BirthCreationPanel from './BirthCreationPanel.jsx';
 import Dialog from './Dialog.jsx';
 
@@ -37,7 +37,9 @@ export default function CharacterManager({ optionsMenu, onCurrentChange }) {
   const [viewKey, setViewKey] = useState(0);
   const [screen, setScreen] = useState('loading');
   const [creating, setCreating] = useState(false);
-  const [characterSheetOpen, setCharacterSheetOpen] = useState(false);
+  const [activePane, setActivePane] = useState('crib');
+  const [paneBeforeSheet, setPaneBeforeSheet] = useState('crib');
+  const [lifeEventView, setLifeEventView] = useState({ events: null, error: '' });
   const [childState, setChildState] = useState({ busy: false, dirty: false });
   const pending = useRef(false);
   const reportState = useCallback(state => setChildState(state), []);
@@ -52,7 +54,7 @@ export default function CharacterManager({ optionsMenu, onCurrentChange }) {
       setRoster(characters); setAccount(accountState);
       onCurrentChange?.(characters.current);
       setScreen(!accountState.authenticated ? 'landing' : characters.current ? 'game' : 'selection');
-      setCreating(false); setCharacterSheetOpen(false); setReady(true); setMessage('Saved characters loaded.');
+      setCreating(false); setActivePane('crib'); setPaneBeforeSheet('crib'); setReady(true); setMessage('Saved characters loaded.');
     }
     catch (error) { if (error.name !== 'AbortError') setMessage(`Could not load saved characters: ${error.message}`); }
     finally { pending.current = false; if (!signal?.aborted) setBusy(false); }
@@ -81,7 +83,7 @@ export default function CharacterManager({ optionsMenu, onCurrentChange }) {
       });
       setRoster(characters);
       onCurrentChange?.(characters.current);
-      if (action === 'load') { setScreen('game'); setCreating(false); setCharacterSheetOpen(false); }
+      if (action === 'load') { setScreen('game'); setCreating(false); setActivePane('crib'); setPaneBeforeSheet('crib'); }
       if (action === 'new') { setScreen('selection'); setCreating(true); }
       setViewKey(key => key + 1); setChildState({ busy: false, dirty: false });
       setDeleting(null); setConfirmationName(''); setReady(true);
@@ -135,7 +137,7 @@ export default function CharacterManager({ optionsMenu, onCurrentChange }) {
       setAccount(accountResult); setRoster(characters); onCurrentChange?.(characters.current); setPassword(''); setPassword2('');
       if (action === 'register') { setAccountMode('login'); setAccountMessage('Account created. Sign in with your new username and password.'); }
       setScreen(!accountResult.authenticated ? 'landing' : characters.current ? 'game' : 'selection');
-      setCreating(false); setCharacterSheetOpen(false);
+      setCreating(false); setActivePane('crib'); setPaneBeforeSheet('crib');
       setViewKey(key => key + 1); setChildState({ busy: false, dirty: false }); setReady(true);
       setMessage(action === 'register' ? 'Account created. Please sign in.' : accountResult.authenticated ? 'Your account characters are ready in this browser.' : 'Signed out.');
     } catch (error) {
@@ -145,6 +147,12 @@ export default function CharacterManager({ optionsMenu, onCurrentChange }) {
   }
   const locked = busy || !ready || childState.busy;
   const current = roster?.current;
+  const characterSheetOpen = activePane === 'sheet' || activePane === 'lifeEvents';
+  const lifeEventsOpen = activePane === 'lifeEvents';
+  function toggleCharacterSheet() {
+    if (characterSheetOpen) setActivePane(paneBeforeSheet);
+    else { setPaneBeforeSheet(activePane); setActivePane('sheet'); }
+  }
   async function deleteAccount(event) {
     event.preventDefault();
     if (pending.current || !csrfToken()) return;
@@ -174,19 +182,6 @@ export default function CharacterManager({ optionsMenu, onCurrentChange }) {
       {accountMessage && <p role="alert">{accountMessage}</p>}
     </section>
   </>) : optionsMenu;
-  useLayoutEffect(() => {
-    if (screen !== 'game') return undefined;
-    const screenElement = document.querySelector('.game-screen');
-    const left = screenElement?.querySelector('.game-tools');
-    const right = [...(screenElement?.querySelectorAll('.game-entry, .character-sheet-panel .birth-creation') ?? [])]
-      .find(element => getComputedStyle(element).display !== 'none');
-    if (!left || !right) return undefined;
-    const matchHeight = () => { left.style.height = `${right.getBoundingClientRect().height}px`; };
-    const observer = new ResizeObserver(matchHeight);
-    observer.observe(right);
-    matchHeight();
-    return () => { observer.disconnect(); left.style.removeProperty('height'); };
-  }, [screen, characterSheetOpen, current?.id, viewKey]);
   useEffect(() => {
     if (screen !== 'game') return undefined;
     const record = () => {
@@ -198,6 +193,15 @@ export default function CharacterManager({ optionsMenu, onCurrentChange }) {
     const timer = window.setInterval(record, 60_000);
     return () => window.clearInterval(timer);
   }, [screen, current?.id]);
+  useEffect(() => {
+    if (!lifeEventsOpen) return undefined;
+    const controller = new AbortController();
+    setLifeEventView({ events: null, error: '' });
+    request(`/api/characters/events/?character_id=${encodeURIComponent(current?.id ?? '')}`, { signal: controller.signal })
+      .then(result => setLifeEventView({ events: result.events, error: '' }))
+      .catch(error => { if (error.name !== 'AbortError') setLifeEventView({ events: [], error: error.message }); });
+    return () => controller.abort();
+  }, [lifeEventsOpen, current?.id]);
   if (screen === 'loading') return <section className="panel"><p role="status">Loading account…</p></section>;
 
   if (screen === 'landing') return <section className="panel account-landing" aria-labelledby="account-heading">
@@ -231,12 +235,13 @@ export default function CharacterManager({ optionsMenu, onCurrentChange }) {
     <p className="help">Your characters are saved to your account and can be loaded from another browser.</p>
   </section>;
 
-  if (screen === 'game') return <div className="game-area"><div className={`game-screen${characterSheetOpen ? ' sheet-open' : ''}`}>
+  if (screen === 'game') return <div className="game-area"><div className={`game-screen pane-${activePane}`}>
     <aside className="panel game-tools" aria-label="Character tools">
-      {current?.kind === 'birth' && <button type="button" aria-expanded={characterSheetOpen} aria-controls="character-sheet"
+      {current?.kind === 'birth' && <button type="button" aria-expanded={characterSheetOpen}
+        aria-controls={lifeEventsOpen ? 'life-events-page' : 'character-sheet'}
         className="icon-button sheet-toggle" aria-label={characterSheetOpen ? 'Hide character sheet' : 'Show character sheet'}
         title={characterSheetOpen ? 'Hide character sheet' : 'Show character sheet'}
-        onClick={() => setCharacterSheetOpen(open => !open)}>
+        onClick={toggleCharacterSheet}>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h11l3 3v15H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" /><path d="M8 3v18M11 8h6M11 12h6M11 16h4M17 3v4h3" /></svg>
       </button>}
     </aside>
@@ -258,8 +263,20 @@ export default function CharacterManager({ optionsMenu, onCurrentChange }) {
         <p>Your saved story is loaded. Birth details are unavailable for this older character.</p>
       </>}
     </section>
-    {current?.kind === 'birth' && characterSheetOpen && <div id="character-sheet" className="character-sheet-panel"><BirthCreationPanel key={`${current.id}-${viewKey}`} readUrl="/api/characters/current/"
-      disabled={busy || !ready} onConfirmed={reload} onStateChange={reportState} /></div>}
+    {current?.kind === 'birth' && activePane === 'sheet' && <div id="character-sheet" className="character-sheet-panel">
+      <BirthCreationPanel key={`${current.id}-${viewKey}`} readUrl="/api/characters/current/" showStartingResources={false}
+        disabled={busy || !ready} onConfirmed={reload} onStateChange={reportState}
+        onOpenLifeEvents={() => setActivePane('lifeEvents')} />
+    </div>}
+    {current?.kind === 'birth' && lifeEventsOpen && <section id="life-events-page" className="panel life-events-panel" aria-labelledby="life-events-heading">
+      <div className="life-events-header"><h2 id="life-events-heading">Life Events</h2>
+        <button type="button" className="secondary" onClick={() => setActivePane('sheet')}>Back to Character Sheet</button></div>
+      <div className="life-events-console" role="log" aria-label="Character life events">
+        {lifeEventView.events === null ? <p role="status">Loading life events…</p> : lifeEventView.error ? <p role="alert">Could not load life events: {lifeEventView.error}</p> : lifeEventView.events.length ? lifeEventView.events.map((event, index) => <p className="life-event" key={`${event.event_type}-${event.occurred_at}-${index}`}>
+          <time dateTime={event.occurred_at}>{new Date(event.occurred_at).toLocaleString()}</time><br />{event.text}
+        </p>) : <p>No life events have been recorded yet.</p>}
+      </div>
+    </section>}
     {current?.kind === 'legacy' && <section className="panel"><h2>{current.name}</h2><p>Level {current.level} · Experience {current.experience}</p></section>}
   </div></div>;
 

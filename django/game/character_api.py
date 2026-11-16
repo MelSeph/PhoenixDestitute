@@ -47,6 +47,20 @@ def current(request):
     return _respond(request, local_characters.current_character)
 
 
+@require_GET
+def life_events(request):
+    character_id = request.GET.get("character_id")
+    try:
+        events = local_characters.character_life_events(
+            session_key=request.session.session_key,
+            character_id=character_id,
+            account_id=request.user.pk if request.user.is_authenticated else None,
+        )
+    except LocalCharacter.DoesNotExist:
+        return JsonResponse({"error": "No available character in this session."}, status=404)
+    return JsonResponse({"success": True, "events": events})
+
+
 @require_POST
 def load(request):
     return _respond(request, local_characters.load_character, {"character_id"})

@@ -67,11 +67,11 @@ summary { cursor: pointer; padding-block: .5em; font-weight: bold; }
 .icon-button { display: inline-grid; place-items: center; width: 40px; min-width: 40px; min-height: 40px; padding: 7px; }
 .icon-button svg, .account-actions svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
 .game-area { width: 100%; }
-.game-screen { display: grid; grid-template-columns: 48px minmax(0, 1fr); align-items: start; gap: 4px; width: 100%; min-height: calc(100vh - 260px); }
+.game-screen { display: grid; grid-template-columns: 48px minmax(0, 1fr); align-items: stretch; gap: 4px; width: 100%; min-height: calc(100vh - 260px); }
 .game-tools { display: flex; grid-column: 1; grid-row: 1; flex-direction: column; align-items: center; gap: 4px; min-height: calc(100vh - 260px); margin: 0; padding: 8px 4px; }
 .sheet-toggle { align-self: start; }
 .game-entry { position: relative; grid-column: 2; grid-row: 1; width: 100%; min-width: 0; min-height: calc(100vh - 260px); margin: 0; }
-.game-screen.sheet-open .game-entry { display: none; }
+.game-screen:not(.pane-crib) .game-entry { display: none; }
 .game-controls { position: absolute; top: 16px; right: 16px; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
 .game-control-icons { display: flex; align-items: center; gap: 8px; }
 .birth-resource-bars { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; margin: 0 0 4px; }
@@ -80,7 +80,16 @@ summary { cursor: pointer; padding-block: .5em; font-weight: bold; }
 .game-resource-track { grid-column: 1 / -1; height: 14px; overflow: hidden; border-radius: 999px; background: #292929; }
 .game-resource-track i { display: block; height: 100%; border-radius: inherit; transition: width .3s ease; }
 .game-resource.health i { background: #d94141; }.game-resource.mana i { background: #3478d4; }.game-resource.stamina i { background: #35a85a; }
-.character-sheet-panel { grid-column: 2; grid-row: 1; width: 100%; min-width: 0; }
+.character-sheet-panel { display: flex; grid-column: 2; grid-row: 1; width: 100%; min-width: 0; }
+.character-sheet-panel > .birth-creation { flex: 1; margin: 0; }
+.sheet-section { margin-block: 16px; border: 1px solid var(--color-border); border-radius: 8px; padding: 12px; }
+.sheet-section > summary { color: var(--color-accent); font-size: 1.1em; font-weight: 700; cursor: pointer; }
+.life-events-panel { grid-column: 2; grid-row: 1; width: 100%; min-width: 0; min-height: calc(100vh - 260px); margin: 0; }
+.life-events-header { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+.life-events-console { max-height: 65vh; overflow: auto; padding: 16px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-background); font-family: "Courier New", monospace; }
+.life-event { margin: 0; padding: 14px 0; border-bottom: 1px solid var(--color-border); }
+.life-event:last-child { border-bottom: 0; }
+.life-event time { color: var(--color-muted); font-size: .9em; }
 .compact-button { width: 36px; min-width: 36px; min-height: 36px; padding: 6px; }
 .account-actions { margin-top: 16px; }
 .account-actions button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
@@ -103,7 +112,14 @@ input[type='range'] { display: block; width: 100%; min-height: 44px; accent-colo
 .birth-stats { min-width: 0; border: 1px solid var(--color-border); border-radius: 8px; padding: 16px; }
 .birth-stats legend { padding-inline: 8px; color: var(--color-accent); font-weight: bold; }
 .stat-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 16px; padding-block: 12px; border-top: 1px solid var(--color-border); }
+.stat-row:first-of-type { border-top: 0; }
 .stat-row output { font-weight: bold; }
+.stat-label { display: flex; align-items: center; gap: 8px; }
+.stat-info-wrap { position: relative; display: inline-flex; flex: none; }
+.stat-info-button { display: inline-grid; place-items: center; width: 24px; min-width: 24px; min-height: 24px; height: 24px; padding: 2px; border: 0; border-radius: 50%; background: transparent; color: var(--color-accent); cursor: help; }
+.stat-info-button svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.stat-tooltip { position: absolute; z-index: 2; left: 0; bottom: calc(100% + 8px); visibility: hidden; width: min(20rem, 70vw); padding: 10px 12px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-background); color: var(--color-text); font-size: .9em; font-weight: normal; line-height: 1.4; box-shadow: 0 4px 14px rgb(0 0 0 / .3); opacity: 0; pointer-events: none; }
+.stat-info-wrap:hover .stat-tooltip, .stat-info-wrap:focus-within .stat-tooltip { visibility: visible; opacity: 1; }
 .stat-lock { display: flex; align-items: center; gap: 8px; margin: 0; min-height: 44px; cursor: pointer; }
 .stat-lock input[type='checkbox'] { width: 24px; min-height: 24px; height: 24px; margin: 0; padding: 0; flex: none; accent-color: var(--color-accent); }
 .stat-lock:has(input:disabled) { cursor: not-allowed; }

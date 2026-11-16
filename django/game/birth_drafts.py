@@ -169,8 +169,13 @@ def confirm_birth(*, session_key, revision, account_id=None):
                          identity=copy.deepcopy(identity), stats=stats, resources=birth_resources(stats))
     record.full_clean()
     record.save()
-    from .models import LocalCharacter
+    from .models import LifeEvent, LocalCharacter
     LocalCharacter.objects.create(session=None if account else session, account=account, player=player)
+    LifeEvent.objects.create(
+        playthrough=life,
+        event_type="welcome",
+        text=f"Welcome into the world {identity['name']}! What will you become?",
+    )
     # Persist activation in the same transaction as the birth. A lost response or
     # middleware/session-save failure must not leave an orphaned duplicate birth.
     data["active_player_id"] = str(player.pk)

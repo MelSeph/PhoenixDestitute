@@ -27,4 +27,6 @@ The player requested smaller, icon-based controls; one Sign in action plus Creat
 
 ## Pane sizing and birth resource strip — 2026-11-16
 
-For paired left/right game panes, the left pane height must track the **visible content pane**, including when toggling from the crib to the character sheet. Measure the visible right pane, not its wrapper or a hidden pane. Apply this rule to future paired-pane areas beginning with birth. Health, Mana, and Stamina gauges sit in a full-width strip below the masthead; their cards have compact spacing and centered text.
+For paired left/right game panes, both visible panes fill the same CSS Grid row, including when toggling from the crib to the character sheet. The Character Sheet's bordered panel fills its pane wrapper. Hidden panes do not affect the active row. Apply this rule to future paired-pane areas beginning with birth. Health, Mana, and Stamina gauges sit in a full-width strip below the masthead; their cards have compact spacing and centered text.
+
+The next pane extension adds the collapsible character sheet sections and Life Events console described in [35-character-sheet-life-events.md](35-character-sheet-life-events.md). All panes use the visible-right-pane sizing rule above.

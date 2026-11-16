@@ -12,7 +12,7 @@ from . import models
 RETENTION = timedelta(days=365 * 2)
 MODEL_ORDER = (
     "Character", "Legacy", "Player", "LocalCharacter", "CharacterRecoveryCode", "BirthStatDraft", "Playthrough",
-    "PlayerGameSettings", "GameSave", "PlaythroughSave", "BirthRecord", "InventoryItem",
+    "LifeEvent", "PlayerGameSettings", "GameSave", "PlaythroughSave", "BirthRecord", "InventoryItem",
     "DeathSnapshot", "DeathSnapshotEntry", "ItemThermalEnchantment", "EquippedPosition",
 )
 
@@ -31,6 +31,7 @@ def _snapshot(user):
         "CharacterRecoveryCode": models.CharacterRecoveryCode.objects.filter(player__account=user),
         "BirthStatDraft": models.BirthStatDraft.objects.filter(account=user),
         "Playthrough": lives.order_by("created_at", "pk"),
+        "LifeEvent": models.LifeEvent.objects.filter(playthrough_id__in=life_ids),
         "PlayerGameSettings": models.PlayerGameSettings.objects.filter(player__account=user),
         "GameSave": models.GameSave.objects.filter(player__account=user),
         "PlaythroughSave": models.PlaythroughSave.objects.filter(playthrough_id__in=life_ids),

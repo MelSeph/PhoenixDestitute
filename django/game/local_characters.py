@@ -9,7 +9,7 @@ from django.db.models.deletion import ProtectedError
 from django.utils import timezone
 
 from .models import (BirthRecord, BirthStatDraft, Character, DeathSnapshot, DeathSnapshotEntry,
-                     EquippedPosition, InventoryItem, ItemThermalEnchantment, Legacy,
+                     EquippedPosition, InventoryItem, ItemThermalEnchantment, Legacy, LifeEvent,
                      LocalCharacter, Player, Playthrough, PlaythroughSave)
 
 
@@ -63,7 +63,15 @@ def _current(entry):
     record = BirthRecord.objects.select_related("playthrough__legacy__player").filter(playthrough=life).first() if life else None
     if record:
         from .birth_drafts import birth_record_payload
-        return {"kind": "birth", "id": str(entry.pk), "draft": birth_record_payload(record)}
+        LifeEvent.objects.get_or_create(
+            playthrough=record.playthrough,
+            event_type="welcome",
+            defaults={"text": f"Welcome into the world {record.identity['name']}! What will you become?"},
+        )
+        life_events = list(LifeEvent.objects.filter(playthrough__legacy_id=entry.player.legacy_id)
+            .values("event_type", "text", "occurred_at"))
+        return {"kind": "birth", "id": str(entry.pk), "draft": birth_record_payload(record),
+                "life_events": [{**event, "occurred_at": event["occurred_at"].isoformat()} for event in life_events]}
     return {"kind": "legacy", "id": str(entry.pk), "name": _name(entry),
             "level": entry.player.level, "experience": entry.player.experience}
 
@@ -124,6 +132,14 @@ def current_character(*, session_key, account_id=None):
     if payload["current"] is None:
         raise LocalCharacter.DoesNotExist
     return {"success": True, "draft": payload["current"].get("draft"), "character": payload["current"]}
+
+
+@transaction.atomic
+def character_life_events(*, session_key, character_id, account_id=None):
+    session = _session(session_key)
+    _adopt_active(session, account_id)
+    entry = _entry(session, character_id, account_id=account_id)
+    return _current(entry).get("life_events", [])
 
 
 @transaction.atomic

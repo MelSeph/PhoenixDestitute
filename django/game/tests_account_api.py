@@ -9,7 +9,7 @@ from django.urls import reverse
 from .character_recovery import issue_recovery_code
 from .models import BirthStatDraft, LocalCharacter, Player, PlaythroughSave
 from .models import DeletedAccountArchive, AccountRecoveryEvent, AccountDepartureMetric
-from .models import BirthRecord, EquipmentDefinition, InventoryItem
+from .models import BirthRecord, EquipmentDefinition, InventoryItem, LifeEvent
 from .tests_birth_confirmation import identity
 
 
@@ -254,6 +254,8 @@ class PlayerAccountApiTests(TestCase):
         restored_life = restored_player.legacy.playthroughs.get(status="active")
         restored_birth = BirthRecord.objects.get(playthrough=restored_life)
         self.assertEqual(restored_birth.identity["name"], "Mira")
+        self.assertEqual(LifeEvent.objects.get(playthrough=restored_life).text,
+                         "Welcome into the world Mira! What will you become?")
         restored_item = InventoryItem.objects.get(playthrough=restored_life)
         self.assertEqual(restored_item.pk, item_id)
         self.assertEqual(restored_item.properties, {"instance": "unique-rattle", "durability": 8, "max_durability": 10})

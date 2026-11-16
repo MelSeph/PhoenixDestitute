@@ -321,6 +321,22 @@ class BirthRecord(models.Model):
             raise ValidationError("Birth confirmation creates an initial life only.")
 
 
+class LifeEvent(models.Model):
+    """A meaningful event recorded in a character's continuing story."""
+
+    playthrough = models.ForeignKey(Playthrough, on_delete=models.CASCADE, related_name="life_events")
+    event_type = models.CharField(max_length=40)
+    text = models.TextField()
+    occurred_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["occurred_at", "pk"]
+        constraints = [models.UniqueConstraint(
+            fields=["playthrough"], condition=models.Q(event_type="welcome"),
+            name="one_welcome_event_per_playthrough",
+        )]
+
+
 class EquipmentPosition(models.TextChoices):
     UPPER_UNDERGARMENT = "upper_undergarment", "Upper undergarment"
     UPPER_CLOTHING = "upper_clothing", "Upper clothing"

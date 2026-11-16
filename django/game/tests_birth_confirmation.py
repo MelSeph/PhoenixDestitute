@@ -12,7 +12,7 @@ from django.utils import timezone
 
 from .birth_drafts import confirm_birth
 from .birth_identity import BIRTH_IDENTITY_OPTIONS, empty_birth_identity, validate_birth_identity
-from .models import BirthRecord, BirthStatDraft, Character, GameSave, Legacy, Player, Playthrough, PlaythroughSave
+from .models import BirthRecord, BirthStatDraft, Character, GameSave, Legacy, LifeEvent, Player, Playthrough, PlaythroughSave
 
 
 def identity():
@@ -127,14 +127,25 @@ class BirthConfirmationTests(TestCase):
         self.assertEqual(record.identity, identity())
         self.assertEqual(record.playthrough.transition_type, Playthrough.Transition.INITIAL)
         self.assertEqual(record.playthrough.character.name, "Phoenix")
+        event = LifeEvent.objects.get(playthrough=record.playthrough)
+        self.assertEqual(event.event_type, "welcome")
+        self.assertEqual(event.text, "Welcome into the world Phoenix! What will you become?")
         self.assertEqual(str(record.playthrough.character_id), confirmed["birth"]["character_id"])
         self.assertEqual(self.client.session.session_key, key)
         self.assertEqual(self.client.session["active_player_id"], confirmed["birth"]["player_id"])
         roster = self.client.get(reverse("api-characters")).json()
         self.assertEqual(roster["current"]["kind"], "birth")
         self.assertEqual(roster["current"]["draft"]["birth"]["player_id"], confirmed["birth"]["player_id"])
+        self.assertEqual(roster["current"]["life_events"][0]["text"],
+                         "Welcome into the world Phoenix! What will you become?")
+        events = self.client.get(reverse("api-character-life-events"), {
+            "character_id": roster["characters"][0]["id"],
+        })
+        self.assertEqual(events.status_code, 200, events.content)
+        self.assertEqual(events.json()["events"][0]["text"],
+                         "Welcome into the world Phoenix! What will you become?")
         self.assertEqual(self.client.get(reverse("api-player-detail")).json()["player"]["name"], "Phoenix")
-        for model in [Player, Legacy, Character, Playthrough, BirthRecord]:
+        for model in [Player, Legacy, Character, Playthrough, BirthRecord, LifeEvent]:
             self.assertEqual(model.objects.count(), 1)
         self.assertFalse(GameSave.objects.exists())
         self.assertFalse(PlaythroughSave.objects.exists())
@@ -150,7 +161,20 @@ class BirthConfirmationTests(TestCase):
             self.assertEqual(self.post(self.base, {}).json()["draft"], confirmed)
             rng.assert_not_called()
         self.assertEqual(BirthRecord.objects.count(), 1)
+        self.assertEqual(LifeEvent.objects.count(), 1)
         self.assertEqual(Character.objects.count(), 1)
+
+    def test_loading_existing_birth_backfills_a_missing_welcome_event(self):
+        self.save_identity()
+        self.assertEqual(self.confirm().status_code, 201)
+        LifeEvent.objects.all().delete()
+        roster = self.client.get(reverse("api-characters")).json()
+        events = roster["current"]["life_events"]
+        self.assertEqual(len(events), 1)
+        self.assertEqual(events[0]["text"], "Welcome into the world Phoenix! What will you become?")
+        self.assertEqual(LifeEvent.objects.count(), 1)
+        current = self.client.get(reverse("api-character-current")).json()
+        self.assertEqual(current["character"]["life_events"], events)
 
     def test_all_mutations_are_frozen_after_confirmation(self):
         self.save_identity()

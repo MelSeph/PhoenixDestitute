@@ -330,6 +330,22 @@ The user requested admin screens via `admin.py`. Added searchable/filterable ins
 
 The user subsequently authorized committing and pushing the admin screens with “commit and push”. Validation: all 305 Django tests pass, system checks pass, and no migration drift is detected. No deployment or account changes are included.
 
+## Shared browser-facing port for game and admin — 2026-11-16
+
+The user requested the game and admin be reachable on port 5173 while retaining separate login spaces. Vite now proxies `/admin` and Django `/static` assets to the existing Django server on port 8000. The game remains at `/`; admin is at `/admin/`. Django's separate admin session cookie (`phoenix_admin_session`) and player account authentication remain unchanged. Port 8000 remains an internal backend listener, not a second browser-facing entry point.
+
+## Character sheet attribute labels and condition note — 2026-11-16
+
+The user requested that both Character Sheet “Starting Attributes” labels become “Attributes,” and that the wellbeing explanation move from below the attribute list into an information bubble before Baseline Condition. Its tooltip is keyboard accessible. Birth creation and birth review continue to identify starting attributes as birth-specific.
+
+The user then requested removal of “These are your confirmed birth attributes.” from the confirmed Character Sheet. The edit-time lock/reroll guidance remains limited to the editable birth draft.
+
+The user requested removing the separator above Luck. The first stat row is borderless at the top; later attribute rows retain their separators.
+
+The user requested removing the inner duplicate “Attributes” label from the Character Sheet; only the collapsed section heading names the attributes.
+
+The user requested removing Name and Gender from Body details, then placing Gender between Name and age state in the sheet heading. Birth review continues to show identity details.
+
 ## Save access after browser restart — 2026-11-15
 
 The user reported save loading failing after closing/reopening the same normal browser/address. Confirmed a shared admin/game session lifecycle bug, rather than a browser-close cookie-expiry default. Isolated admin into its own cookie, retained persistent game cookies, and added validated compatibility handling for old shared staff sessions without claiming unrelated orphaned characters. See [30-session-persistence.md](30-session-persistence.md). All 309 Django tests and 9 relevant browser cases pass, including an actual persistent-profile browser process restart. No migration, account/password changes, live-data reset, commit, or push.

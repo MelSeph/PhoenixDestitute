@@ -37,11 +37,12 @@ async function create(page, name) {
   await page.getByRole('button', { name: 'Confirm birth', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'You wake up in your crib', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Show character sheet', exact: true })).toHaveAttribute('aria-expanded', 'false');
-  await expect(page.getByRole('heading', { name: `${name} · Newborn`, exact: true })).not.toBeVisible();
+  await expect(page.getByRole('heading', { name: `${name} · Nonbinary · Newborn`, exact: true })).not.toBeVisible();
   await page.getByRole('button', { name: 'Show character sheet', exact: true }).click();
-  await expect(page.getByRole('heading', { name: `${name} · Newborn`, exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: `${name} · Nonbinary · Newborn`, exact: true })).toBeVisible();
+  await expect(page.locator('.identity-summary dt')).toHaveText(['Skin tone', 'Eye color', 'Hair length']);
   await page.getByRole('button', { name: 'Hide character sheet', exact: true }).click();
-  await expect(page.getByRole('heading', { name: `${name} · Newborn`, exact: true })).not.toBeVisible();
+  await expect(page.getByRole('heading', { name: `${name} · Nonbinary · Newborn`, exact: true })).not.toBeVisible();
   await page.getByRole('button', { name: 'Choose another character', exact: true }).click();
   await expect(page.getByRole('button', { name: `Load ${name}`, exact: true })).toBeEnabled();
 }
@@ -49,7 +50,7 @@ async function create(page, name) {
 async function expectPanesMatch(page) {
   await expect.poll(async () => page.evaluate(() => {
     const left = document.querySelector('.game-tools')?.getBoundingClientRect();
-    const rightElement = [...document.querySelectorAll('.game-entry, .character-sheet-panel .birth-creation')].find(element => getComputedStyle(element).display !== 'none');
+    const rightElement = [...document.querySelectorAll('.game-entry, .character-sheet-panel > .birth-creation, .life-events-panel')].find(element => getComputedStyle(element).display !== 'none');
     const right = rightElement?.getBoundingClientRect();
     return left && right ? Math.abs(left.height - right.height) : null;
   })).toBeLessThanOrEqual(1);
@@ -92,13 +93,33 @@ test('create two characters, load either, and retain the selection across refres
   await expect(page.getByRole('button', { name: 'Show character sheet', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Show character sheet', exact: true }).click();
   await expectPanesMatch(page);
-  await expect(page.getByRole('heading', { name: 'Ash · Newborn', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Ash · Nonbinary · Newborn', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Starting resources', exact: true })).toHaveCount(0);
+  await expect(page.getByText('Body', { exact: true })).toBeVisible();
+  await expect(page.getByText('Attributes', { exact: true })).toBeVisible();
+  await expect(page.locator('.sheet-section').nth(0)).toHaveJSProperty('open', false);
+  await expect(page.locator('.sheet-section').nth(1)).toHaveJSProperty('open', false);
   await expect(page.getByLabel('Strength value', { exact: true })).toHaveText(String(first.stats.strength));
+  await page.getByRole('button', { name: 'Life Events', exact: true }).click();
+  await expectPanesMatch(page);
+  await expect(page.getByRole('heading', { name: 'Life Events', exact: true })).toBeVisible();
+  await expect.poll(() => page.locator('.life-events-panel').evaluate(panel => panel.getBoundingClientRect().height >= window.innerHeight - 260)).toBe(true);
+  await expect(page.getByText('Welcome into the world Ash! What will you become?', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Back to Character Sheet', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Ash · Nonbinary · Newborn', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Hide character sheet', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'You wake up in your crib', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Show character sheet', exact: true }).click();
+  await page.getByRole('button', { name: 'Life Events', exact: true }).click();
+  await page.getByRole('button', { name: 'Hide character sheet', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'You wake up in your crib', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Show character sheet', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Ash · Nonbinary · Newborn', exact: true })).toBeVisible();
   await page.reload();
   await expect(page.getByRole('heading', { name: 'You wake up in your crib', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Show character sheet', exact: true })).toHaveAttribute('aria-expanded', 'false');
   await page.getByRole('button', { name: 'Show character sheet', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Ash · Newborn', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Ash · Nonbinary · Newborn', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Choose another character', exact: true }).click();
   await page.getByRole('button', { name: 'Load Ember', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'You wake up in your crib', exact: true })).toBeVisible();
@@ -255,5 +276,5 @@ test('a new account character loads into the game after signing in elsewhere', a
   await second.getByRole('button', { name: 'Load Across Worlds', exact: true }).click();
   await expect(second.getByRole('heading', { name: 'You wake up in your crib', exact: true })).toBeVisible();
   await second.getByRole('button', { name: 'Show character sheet', exact: true }).click();
-  await expect(second.getByRole('heading', { name: 'Across Worlds · Newborn', exact: true })).toBeVisible();
+  await expect(second.getByRole('heading', { name: 'Across Worlds · Nonbinary · Newborn', exact: true })).toBeVisible();
 });

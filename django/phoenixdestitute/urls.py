@@ -18,6 +18,7 @@ urlpatterns = [
     path("api/account/activity/", account_api.record_activity, name="api-account-activity"),
     path("api/characters/", character_api.characters, name="api-characters"),
     path("api/characters/current/", character_api.current, name="api-character-current"),
+    path("api/characters/events/", character_api.life_events, name="api-character-life-events"),
     path("api/characters/load/", character_api.load, name="api-character-load"),
     path("api/characters/new/", character_api.new, name="api-character-new"),
     path("api/characters/delete/", character_api.delete, name="api-character-delete"),

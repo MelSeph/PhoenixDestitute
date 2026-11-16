@@ -24,10 +24,10 @@ function ColorVisual({ field, color }) {
 
 function choice(options, key, value) { return options[key]?.find(option => option.value === value); }
 
-export function AppearanceSummary({ identity, options }) {
+export function AppearanceSummary({ identity, options, showIdentity = true }) {
   return <dl className="identity-summary">
-    <dt>Name</dt><dd>{identity.name}</dd>
-    <dt>Gender</dt><dd>{identity.gender === 'custom' ? identity.custom_gender : choice(options, 'gender', identity.gender)?.label}</dd>
+    {showIdentity && <><dt>Name</dt><dd>{identity.name}</dd>
+      <dt>Gender</dt><dd>{identity.gender === 'custom' ? identity.custom_gender : choice(options, 'gender', identity.gender)?.label}</dd></>}
     {Object.entries(identityLabels).filter(([key]) => identity.hair_length !== 'bald' || !['hair_color', 'hair_texture'].includes(key)).map(([key, label]) => {
       const selected = choice(options, key, identity[key]);
       return <React.Fragment key={key}><dt>{label}</dt><dd>

@@ -85,7 +85,7 @@ test('saved identity survives rolls and refresh; review is read-only and confirm
   expect(result.status()).toBe(201);
   const confirmed = (await result.json()).draft;
   await page.getByRole('button', { name: 'Show character sheet', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Ash · Newborn', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Ash · Nonbinary · Newborn', exact: true })).toBeVisible();
   await expect(page.getByText(`Character ID: ${confirmed.birth.character_id}`, { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Reroll unlocked attributes', exact: true })).not.toBeVisible();
   await expect(page.getByRole('button', { name: 'Review birth', exact: true })).not.toBeVisible();
@@ -96,7 +96,7 @@ test('saved identity survives rolls and refresh; review is read-only and confirm
   expect((await repeated.json()).draft).toEqual(confirmed);
   await page.reload();
   await page.getByRole('button', { name: 'Show character sheet', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Ash · Newborn', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Ash · Nonbinary · Newborn', exact: true })).toBeVisible();
   await page.locator('.birth-creation').screenshot({ path: testInfo.outputPath('confirmed-birth.png') });
 });
 
@@ -143,7 +143,7 @@ test('lost confirmation response recovers the confirmed birth without another PO
   await page.getByRole('button', { name: 'Back to choices', exact: true }).click();
   await page.getByRole('button', { name: 'Reload draft', exact: true }).click();
   await page.getByRole('button', { name: 'Show character sheet', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Ash · Newborn', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Ash · Nonbinary · Newborn', exact: true })).toBeVisible();
   expect(confirmations).toBe(1);
 });
 

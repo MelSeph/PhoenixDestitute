@@ -209,6 +209,14 @@ class BirthRecordAdmin(ReadOnlyAdmin):
     date_hierarchy = "confirmed_at"
 
 
+@admin.register(models.LifeEvent)
+class LifeEventAdmin(ReadOnlyAdmin):
+    list_display = ("playthrough", "event_type", "occurred_at", "text")
+    search_fields = ("text", "playthrough__character__name")
+    list_filter = ("event_type",)
+    date_hierarchy = "occurred_at"
+
+
 @admin.register(models.GameSave)
 class GameSaveAdmin(ReadOnlyAdmin):
     list_display = ("id", "player", "updated_at")

@@ -14,7 +14,7 @@ Game state and catalogs are intentionally read-only in this initial administrati
 
 ## Access and Django explanation
 
-Open **http://127.0.0.1:8000/admin/** directly (the React development proxy does not forward admin paths). Use an existing active staff login with appropriate model view permissions; a superuser can inspect all registered screens. Anonymous/nonstaff access redirects to login. This task does not create or modify accounts/passwords.
+Open **http://127.0.0.1:5173/admin/** through the React development server. Vite forwards `/admin` and `/static` to Django on port 8000, so the game and admin share the browser-facing port while retaining separate login spaces. Use an existing active staff login with appropriate model view permissions; a superuser can inspect all registered screens. Anonymous/nonstaff access redirects to login. This task does not create or modify accounts/passwords.
 
 If no admin account exists, create one interactively from `django/`:
 
