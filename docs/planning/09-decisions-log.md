@@ -383,3 +383,6 @@ The roster includes saved birth gender and life stage, allowing Choose a charact
 # Sequential birth creation — 2026-11-16
 
 The user requested a staged creation flow: Name, then Appearance, then Stat Allocation, with completed sections collapsed but editable. Each stage becomes available after saving the preceding one. Stat controls show lock/unlock icons while retaining accessible checkbox input. Saving Stat Allocation opens the existing birth review automatically; no separate Review birth button is needed. See [37-sequential-birth-creation.md](37-sequential-birth-creation.md).
+# Resource and experience bars — 2026-11-16
+
+The user requested Health, Mana, Stamina, and Experience values centered inside their progress bars, with an Experience bar below the three resource bars. Django returns the active birth character's saved experience and a next-level target of 100 × level². Experience uses a white track and gold fill; dark text is centered over the fills for contrast. See the current implementation in `BirthResourceBars.jsx`.

@@ -65,33 +65,35 @@ summary { cursor: pointer; padding-block: .5em; font-weight: bold; }
 .options-menu { position: relative; z-index: 5; flex: none; }
 .options-toggle.icon-button { display: inline-grid; place-items: center; margin: 0; }
 .options-menu[open] .appearance-settings { position: absolute; top: calc(100% + 8px); right: 0; width: min(88vw, 40rem); max-height: 78vh; overflow: auto; box-shadow: 0 8px 24px rgb(0 0 0 / .35); }
-.game-options-page { grid-column: 2; grid-row: 1; width: 100%; min-width: 0; min-height: calc(100vh - 260px); margin: 0; overflow: auto; }
+.game-options-page { grid-column: 2; grid-row: 1; width: 100%; min-width: 0; height: 100%; min-height: 0; margin: 0; overflow: auto; }
 .game-options-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .game-options-header h2 { margin-top: 0; }
 .game-options-inline > .options-toggle { display: none; }
 .game-options-inline[open] .appearance-settings { position: static; inset: auto; width: auto; max-height: none; overflow: visible; box-shadow: none; }
 .icon-button { display: inline-grid; place-items: center; width: 40px; min-width: 40px; min-height: 40px; padding: 7px; }
 .icon-button svg, .account-actions svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
-.game-area { width: 100%; }
-.game-screen { display: grid; grid-template-columns: 48px minmax(0, 1fr); align-items: stretch; gap: 4px; width: 100%; min-height: calc(100vh - 260px); }
-.game-tools { display: flex; grid-column: 1; grid-row: 1; flex-direction: column; align-items: center; gap: 4px; min-height: calc(100vh - 260px); margin: 0; padding: 8px 4px; }
+.game-area { width: 100%; --game-pane-height: max(0px, calc(100vh - 350px)); }
+.game-screen { display: grid; grid-template-columns: 48px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); align-items: stretch; gap: 4px; width: 100%; height: var(--game-pane-height); min-height: 0; }
+.game-tools { display: flex; grid-column: 1; grid-row: 1; flex-direction: column; align-items: center; gap: 4px; height: 100%; min-height: 0; margin: 0; padding: 8px 4px; overflow: auto; }
 .sheet-toggle { align-self: start; }
-.game-entry { position: relative; grid-column: 2; grid-row: 1; width: 100%; min-width: 0; min-height: calc(100vh - 260px); margin: 0; }
+.game-entry { position: relative; grid-column: 2; grid-row: 1; width: 100%; min-width: 0; height: 100%; min-height: 0; margin: 0; overflow: auto; }
 .game-screen:not(.pane-crib) .game-entry { display: none; }
 .game-controls { position: absolute; top: 16px; right: 16px; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
 .game-control-icons { display: flex; align-items: center; gap: 8px; }
 .birth-resource-bars { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; margin: 0 0 4px; }
 .game-resource { display: grid; grid-template-columns: 1fr; gap: 8px; padding: 14px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-panel); text-align: center; }
-.game-resource-reading { display: flex; justify-content: center; align-items: baseline; gap: 8px; }
-.game-resource-track { grid-column: 1 / -1; height: 14px; overflow: hidden; border-radius: 999px; background: #292929; }
+.game-resource-track { position: relative; grid-column: 1 / -1; height: 28px; overflow: hidden; border-radius: 999px; background: #fff; }
 .game-resource-track i { display: block; height: 100%; border-radius: inherit; transition: width .3s ease; }
+.game-resource-track span { position: absolute; inset: 0; display: grid; place-items: center; color: #17212b; font-weight: 700; line-height: 1; }
 .game-resource.health i { background: #d94141; }.game-resource.mana i { background: #3478d4; }.game-resource.stamina i { background: #35a85a; }
-.character-sheet-panel { display: flex; grid-column: 2; grid-row: 1; width: 100%; min-width: 0; }
-.character-sheet-panel > .birth-creation { flex: 1; margin: 0; }
+.game-resource.experience { grid-column: 1 / -1; }
+.game-resource.experience i { background: #d6a72c; }
+.character-sheet-panel { display: flex; grid-column: 2; grid-row: 1; width: 100%; min-width: 0; height: 100%; min-height: 0; overflow: auto; }
+.character-sheet-panel > .birth-creation { flex: 1; min-height: 0; margin: 0; }
 .sheet-section { margin-block: 16px; border: 1px solid var(--color-border); border-radius: 8px; padding: 12px; }
 .creation-section { margin-block: 12px; }
 .sheet-section > summary { color: var(--color-accent); font-size: 1.1em; font-weight: 700; cursor: pointer; }
-.life-events-panel { grid-column: 2; grid-row: 1; width: 100%; min-width: 0; min-height: calc(100vh - 260px); margin: 0; }
+.life-events-panel { grid-column: 2; grid-row: 1; width: 100%; min-width: 0; height: 100%; min-height: 0; margin: 0; overflow: auto; }
 .life-events-header { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
 .life-events-console { max-height: 65vh; overflow: auto; padding: 16px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-background); font-family: "Courier New", monospace; }
 .life-event { margin: 0; padding: 14px 0; border-bottom: 1px solid var(--color-border); }

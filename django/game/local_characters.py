@@ -71,6 +71,7 @@ def _current(entry):
         life_events = list(LifeEvent.objects.filter(playthrough__legacy_id=entry.player.legacy_id)
             .values("event_type", "text", "occurred_at"))
         return {"kind": "birth", "id": str(entry.pk), "draft": birth_record_payload(record),
+                "experience": {"current": entry.player.experience, "maximum": 100 * entry.player.level ** 2},
                 "life_events": [{**event, "occurred_at": event["occurred_at"].isoformat()} for event in life_events]}
     return {"kind": "legacy", "id": str(entry.pk), "name": _name(entry),
             "level": entry.player.level, "experience": entry.player.experience}
