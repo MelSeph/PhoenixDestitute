@@ -2,6 +2,18 @@ import React from 'react';
 
 export const identityLabels = { skin_tone: 'Skin tone', eye_color: 'Eye color', hair_length: 'Hair length', hair_color: 'Hair color', hair_texture: 'Hair texture' };
 
+export function GenderModelIcon({ gender }) {
+  return <svg viewBox="0 0 48 48" className="gender-model" aria-hidden="true" data-gender-model={gender}>
+    {gender === 'male' && <><circle cx="18" cy="30" r="12" /><path d="m27 21 14-14m-8 0h8v8" /></>}
+    {gender === 'female' && <><circle cx="24" cy="17" r="12" /><path d="M24 29v15m-7.5-7.5h15" /></>}
+    {gender === 'nonbinary' && <><circle cx="24" cy="24" r="12" /><path d="M24 12V3M24 36v9" /></>}
+    {gender === 'custom' && <>
+      <circle cx="18" cy="15" r="6" />
+      <path d="M7 40c0-8 4-13 11-13s11 5 11 13m9-36 2 5 5 2-5 2-2 5-2-5-5-2 5-2 2-5Z" />
+    </>}
+  </svg>;
+}
+
 export function HairPreview({ length, hair = '#493025', skin = '#c58c63' }) {
   const outline = '#292324';
   return <svg viewBox="0 0 80 88" className="hair-preview" aria-hidden="true" data-hair-length={length}>
@@ -43,7 +55,7 @@ function choice(options, key, value) { return options[key]?.find(option => optio
 export function AppearanceSummary({ identity, options, showIdentity = true }) {
   return <dl className="identity-summary">
     {showIdentity && <><dt>Name</dt><dd>{identity.name}</dd>
-      <dt>Gender</dt><dd>{identity.gender === 'custom' ? identity.custom_gender : choice(options, 'gender', identity.gender)?.label}</dd></>}
+      <dt>Gender</dt><dd><GenderModelIcon gender={identity.gender} />{identity.gender === 'custom' ? identity.custom_gender : choice(options, 'gender', identity.gender)?.label}</dd></>}
     {Object.entries(identityLabels).filter(([key]) => (showIdentity || key !== 'hair_color') && (identity.hair_length !== 'bald' || !['hair_color', 'hair_texture'].includes(key))).map(([key, label]) => {
       const selected = choice(options, key, identity[key]);
       return <React.Fragment key={key}><dt>{label}</dt><dd>
@@ -67,12 +79,15 @@ export function BirthIdentityForm({ identity, options, disabled, dirty, onChange
     <h3>Identity and looks</h3>
     <p className="help">Choose your appearance. These choices do not change your starting attributes. Illustrations show hair length; texture is chosen separately.</p>
     <fieldset disabled={disabled} className="identity-fields">
-      <legend>Name and gender</legend>
+      <legend>Name</legend>
       <label htmlFor="birth-name">Name</label><input id="birth-name" value={identity.name} maxLength={100} autoComplete="off" onChange={event => change('name', event.target.value)} />
-      <label htmlFor="birth-gender">Gender</label><select id="birth-gender" value={identity.gender} onChange={event => change('gender', event.target.value)}>
-        <option value="">Choose gender</option>{options.gender.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
-      </select>
-      {identity.gender === 'custom' && <><label htmlFor="custom-gender">Custom gender label</label><input id="custom-gender" value={identity.custom_gender} maxLength={40} onChange={event => change('custom_gender', event.target.value)} /></>}
+    </fieldset>
+    <fieldset disabled={disabled} className="appearance-choices gender-choices">
+      <legend>Gender</legend><div className="choice-grid">{options.gender.map(option => <label className="choice-card" key={option.value}>
+        <input type="radio" name="birth-gender" value={option.value} checked={identity.gender === option.value} onChange={() => change('gender', option.value)} />
+        <GenderModelIcon gender={option.value} /><span>{option.label}</span>
+      </label>)}</div>
+      {identity.gender === 'custom' && <label htmlFor="custom-gender">Custom gender label<input id="custom-gender" value={identity.custom_gender} maxLength={40} onChange={event => change('custom_gender', event.target.value)} /></label>}
     </fieldset>
     {Object.entries(identityLabels).filter(([key]) => identity.hair_length !== 'bald' || !['hair_color', 'hair_texture'].includes(key)).map(([key, label]) => <fieldset key={key} disabled={disabled} className="appearance-choices">
       <legend>{label}</legend><div className="choice-grid">{options[key].map(option => <label className="choice-card" key={option.value}>

@@ -88,7 +88,13 @@ def _payload(session, account_id=None):
     summaries = []
     for entry in entries:
         life = _life(entry)
+        birth = BirthRecord.objects.filter(playthrough=life).first() if life else None
+        identity = birth.identity if birth else {}
+        gender = identity.get("gender")
+        if gender == "custom":
+            gender = identity.get("custom_gender") or "Custom"
         summaries.append(dict(id=str(entry.pk), name=life.character.name if life else entry.player.name,
+            gender=gender, life_stage="newborn" if birth else None,
             character_id=str(life.character_id) if life else None, active=entry == active, created_at=entry.created_at.isoformat()))
     return {"success": True, "characters": summaries,
             "current": _current(active) if active and data.get("character_screen") == "loaded" else None}

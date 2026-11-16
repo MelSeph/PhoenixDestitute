@@ -352,6 +352,12 @@ The user reported that game Options appeared as a dropdown over the crib. In the
 
 The user requested that each Game Options section be collapsible and initially closed, including the account-deletion section. Appearance categories now use independent disclosure controls and all begin collapsed.
 
+The user requested that Options on character selection follow the crib's replace-and-return flow. It now replaces the roster screen with Game Options and Close returns to the roster, without using the gameplay pane state.
+
+The user requested removal of the placeholder “Example game button” from Custom Theme Colors.
+
+The user requested Male, Female, Nonbinary, and Custom gender models, selecting small inclusive icons and a neutral icon for Custom. Male uses the Mars symbol, Female the Venus symbol, and Nonbinary a circle with lines from opposite poles. The icons appear in the gender choices, birth review, and confirmed character heading; they do not imply appearance or gameplay differences.
+
 The user marked the empty status line in Game Options for removal. The status region now renders only while it contains a message.
 
 The user requested removing Live Appearance Summary as unhelpful to end users. That panel and its customized-count display are removed; explicit copy/download summary actions in Back Up Appearance Settings remain.
@@ -371,3 +377,6 @@ The user selected username/password accounts, transfer of current-browser charac
 ## Account-first game opening — 2026-11-15
 
 The user requested that the landing page contain only sign-in/account creation and Options; after sign-in, show account characters and character creation; after creating or loading a character, enter the game. A newborn starts with waking up in their crib. Existing birth data provides the crib scene; older saved characters return to their story without fabricated birth details. No game actions or progression were implied. Details: [33-account-first-game-opening.md](33-account-first-game-opening.md).
+# Age-stage roster and sheet visuals — 2026-11-16
+
+The roster includes saved birth gender and life stage, allowing Choose a character to show the same Name · Gender · Age pattern as the Character Sheet. The age-state icon set covers baby, toddler, kid, young adult, adult, middle age, elderly, and deceased. The existing newborn stage uses the baby icon and keeps its Newborn label. Characters whose older records lack identity or age show unavailable labels rather than guessed values. See [36-age-stage-character-display.md](36-age-stage-character-display.md).

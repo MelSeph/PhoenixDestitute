@@ -28,7 +28,7 @@ async function create(page, name) {
   await page.getByRole('button', { name: 'Create a character', exact: true }).click();
   await page.getByRole('button', { name: 'Roll starting attributes', exact: true }).click();
   await page.getByLabel('Name', { exact: true }).fill(name);
-  await page.getByLabel('Gender', { exact: true }).selectOption('nonbinary');
+  await page.getByRole('group', { name: 'Gender', exact: true }).getByRole('radio', { name: 'Nonbinary', exact: true }).check();
   for (const [group, value] of [['Skin tone', 'Fair'], ['Eye color', 'Blue'], ['Hair length', 'Bald']]) {
     await page.getByRole('group', { name: group, exact: true }).getByRole('radio', { name: value, exact: true }).check();
   }
@@ -66,7 +66,12 @@ test('landing stays focused on account access and options until sign-in', async 
   await expect(page.locator('.account-landing').getByRole('button', { name: 'Create new account', exact: true })).toHaveCount(1);
   await register(page);
   await expect(page.getByRole('heading', { name: 'Choose a character', exact: true })).toBeVisible();
-  await expect(page.locator('[aria-label="Your characters"] .options-toggle')).toBeVisible();
+  await expect(page.locator('[aria-label="Your characters"] button[aria-label="Options"]')).toBeVisible();
+  await page.locator('[aria-label="Your characters"] button[aria-label="Options"]').click();
+  await expect(page.getByRole('heading', { name: 'Game Options', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Choose a character', exact: true })).not.toBeVisible();
+  await page.getByRole('button', { name: 'Close', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Choose a character', exact: true })).toBeVisible();
 });
 
 test('a failed sign-in leaves the landing form available for another choice', async ({ page }) => {

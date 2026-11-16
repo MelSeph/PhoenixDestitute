@@ -16,6 +16,10 @@ When asked about free-text identity/cosmetics, the user chose **“Define preset
 - Hair length: Bald, Short, Medium, Long, each with a silhouette illustration.
 - Hair texture: Straight, Wavy, Curly, Coily, chosen separately from length.
 
+## Gender model visuals — 2026-11-16
+
+The user requested a small inclusive model for each gender choice and selected icons, with a neutral person icon for Custom. Male uses the standard Mars symbol, Female the standard Venus symbol, and Nonbinary a circle with stems at opposite poles. React renders these SVGs beside the gender radio choices; the selected model also appears in birth review and the confirmed character heading. Icons are decorative; accessible option labels and saved identity values remain authoritative. No anatomy, pronouns, appearance, or gameplay rules are inferred from the chosen gender.
+
 To make the requested length visuals clear, the assistant stated the low-risk implementation assumption of separate Bald/Short/Medium/Long length choices and straight/wavy/curly/coily texture choices before coding. Illustrations are length guides and explicitly do not preview texture. They adopt the selected skin and hair colors; labels and native radio selection remain visible independently of color. Every skin and hair color has a swatch; every eye color has a colored iris illustration. The same visuals appear in review and confirmed summaries. These are code-native SVG/CSS assets, with no external images or image-generation dependency.
 
 Choosing Bald clears and hides hair color and texture, and Django rejects irrelevant choices rather than silently preserving them. Custom gender reveals a player-written label (40 characters maximum); other gender presets require an empty custom label. Names use the existing 100-character limit. Choices are cosmetic and grant no stat bonuses; no pronouns, sex-based rules, attraction scores, or wellbeing formula are inferred.

@@ -1,6 +1,8 @@
 import React, { cloneElement, useCallback, useEffect, useRef, useState } from 'react';
 import BirthCreationPanel from './BirthCreationPanel.jsx';
 import Dialog from './Dialog.jsx';
+import AgeStateIcon, { ageStageLabel } from './AgeStateIcon.jsx';
+import { GenderModelIcon } from './BirthAppearance.jsx';
 
 async function request(url, options = {}) {
   const response = await fetch(url, { credentials: 'same-origin', ...options });
@@ -36,6 +38,7 @@ export default function CharacterManager({ optionsMenu, onCurrentChange }) {
   const [recoveryCode, setRecoveryCode] = useState('');
   const [viewKey, setViewKey] = useState(0);
   const [screen, setScreen] = useState('loading');
+  const [selectionOptionsOpen, setSelectionOptionsOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [activePane, setActivePane] = useState('crib');
   const [paneBeforeSheet, setPaneBeforeSheet] = useState('crib');
@@ -294,15 +297,26 @@ export default function CharacterManager({ optionsMenu, onCurrentChange }) {
     {current?.kind === 'legacy' && <section className="panel"><h2>{current.name}</h2><p>Level {current.level} · Experience {current.experience}</p></section>}
   </div></div>;
 
+  if (selectionOptionsOpen) return <section className="panel selection-options-page" aria-labelledby="selection-options-heading">
+    <div className="game-options-header"><h2 id="selection-options-heading">Game Options</h2>
+      <button type="button" className="secondary" onClick={() => setSelectionOptionsOpen(false)}>Close</button></div>
+    {cloneElement(accountOptions, { open: true, className: 'options-menu game-options-inline' })}
+  </section>;
+
   return <>
     <section className="panel" aria-labelledby="characters-heading" aria-label="Your characters">
-      <div className="section-heading"><h2 id="characters-heading">Choose a character</h2>{accountOptions}</div>
+      <div className="section-heading"><h2 id="characters-heading">Choose a character</h2>
+        <button type="button" className="icon-button secondary" aria-label="Options" title="Options"
+          aria-expanded={selectionOptionsOpen} onClick={() => setSelectionOptionsOpen(true)}>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 3-1 3-3 1-2 4 2 2 1 4 3 1 2 3 4-1 1-3 3-1 2-4-2-2-1-4-3-1-2-3Z" /><circle cx="12" cy="12" r="3" /></svg>
+        </button>
+      </div>
       <div className="actions"><p>Signed in as <strong>{account?.username}</strong></p>
         <button className="secondary" disabled={busy || childState.busy} onClick={() => accountAction()}>Sign out</button></div>
       <p role="status">{message}</p>
       {roster?.characters.length === 0 && <p>No saved characters yet.</p>}
       <ul className="character-list">{roster?.characters.map(entry => <li key={entry.id}>
-        <div><strong>{entry.name}</strong>{entry.active && <span> · Current character</span>}
+        <div><div className="character-identity-line"><strong>{entry.name}</strong> · {entry.gender ? <><GenderModelIcon gender={entry.gender === 'male' ? 'male' : entry.gender === 'female' ? 'female' : entry.gender === 'nonbinary' ? 'nonbinary' : 'custom'} />{entry.gender}</> : 'Gender unavailable'} · <AgeStateIcon stage={entry.life_stage} />{ageStageLabel(entry.life_stage)}{entry.active && <span> · Current character</span>}</div>
           {entry.character_id && <p className="help">Character ID: {entry.character_id}</p>}</div>
         <div className="actions"><button className="icon-button compact-button" disabled={locked} aria-label={`Load ${entry.name}`} title={`Load ${entry.name}`} onClick={() => act('load', entry)}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h4m3-4 4-4-4-4m4 4H8" /></svg></button>
           <button className="icon-button compact-button secondary" disabled={locked} aria-label={`Delete ${entry.name}`} title={`Delete ${entry.name}`} onClick={() => { setDeleting(entry); setConfirmationName(''); }}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16m-10 4v6m4-6v6M5 7l1 14h12l1-14M9 7V4h6v3" /></svg></button></div>

@@ -6,7 +6,7 @@ The Character Sheet section is labeled “Attributes”; the inner stat fieldset
 
 The Character Sheet omits the birth-draft helper sentence “These are your confirmed birth attributes.” The lock/reroll instruction remains visible during editable birth creation.
 
-The Body details omit Name and Gender because the name is already shown in the sheet heading. The heading displays the saved gender between the name and age state.
+The Body details omit Name and Gender because the name is already shown in the sheet heading. The heading displays the saved gender model and label between the name and age state.
 
 The Character Sheet does not repeat Hair color as its own row; the selected color is shown in the Hair length portrait. Hair Texture has an SVG swatch model for each texture, colored with the selected hair color, in both the Character Sheet and birth choices.
 

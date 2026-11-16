@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Dialog from './Dialog.jsx';
-import { AppearanceSummary, BirthIdentityForm } from './BirthAppearance.jsx';
+import { AppearanceSummary, BirthIdentityForm, GenderModelIcon } from './BirthAppearance.jsx';
+import AgeStateIcon, { ageStageLabel } from './AgeStateIcon.jsx';
 
 const statLabels = {
   luck: 'Luck', strength: 'Strength', defense: 'Defense', agility: 'Agility',
@@ -134,7 +135,7 @@ export default function BirthCreationPanel({ readUrl = endpoint, disabled = fals
     <p className="status" role="status" aria-live="polite">{status}</p>
     {missing && readUrl === endpoint && <button disabled={working} onClick={() => write('start')}>Roll starting attributes</button>}
     {draft && <>
-      {frozen && <><h3>{draft.identity.name} · {genderLabel} · Newborn</h3><p>Character ID: {draft.birth.character_id}</p>
+      {frozen && <><h3>{draft.identity.name} · <span className="gender-heading"><GenderModelIcon gender={draft.identity.gender} />{genderLabel}</span> · <span className="age-heading"><AgeStateIcon stage={draft.birth.life_stage} />{ageStageLabel(draft.birth.life_stage)}</span></h3><p>Character ID: {draft.birth.character_id}</p>
         <details className="sheet-section"><summary>Body</summary><AppearanceSummary identity={draft.identity} options={draft.identity_options} showIdentity={false} /></details>
         <p>Your birth choices are confirmed. Training and age progression are not available yet.</p></>}
       {!frozen && identity && draft.identity_options && <BirthIdentityForm identity={identity} options={draft.identity_options} disabled={working || !ready} dirty={dirty} onChange={setIdentity} onSave={() => write('identity')} />}

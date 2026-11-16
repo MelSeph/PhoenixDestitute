@@ -90,7 +90,6 @@ export default function App() {
           <span className="field-label">{label} Color</span><button className="color-trigger secondary" aria-label={`Choose ${label.toLowerCase()} color`} onClick={() => setPicker(key)}><span className="swatch" style={{ background: settings.customColors[key] }} />{settings.customColors[key]}</button>
         </div>)}</div>
         <p className="help">Colors are checked for readable contrast before they are applied.</p>
-        <button>Example game button</button>
       </details>}
       <details className="setting-section"><summary>Restore Defaults</summary>
         <p>Reset readability or colors independently. Export a backup before resetting all settings if you want to keep them.</p>

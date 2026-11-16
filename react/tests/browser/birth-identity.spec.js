@@ -27,7 +27,7 @@ async function pick(page, group, option) {
 }
 async function fill(page, { bald = false, custom = false } = {}) {
   await page.getByLabel('Name', { exact: true }).fill('Ash');
-  await page.getByLabel('Gender', { exact: true }).selectOption(custom ? 'custom' : 'nonbinary');
+  await page.getByRole('group', { name: 'Gender', exact: true }).getByRole('radio', { name: custom ? 'Custom' : 'Nonbinary', exact: true }).check();
   if (custom) await page.getByLabel('Custom gender label', { exact: true }).fill('My identity');
   await pick(page, 'Skin tone', 'Dark brown');
   await pick(page, 'Eye color', 'Green');
@@ -42,6 +42,11 @@ async function save(page) {
 
 test('every color choice has its matching visual and every hair length has an illustration', async ({ page }, testInfo) => {
   const initial = await start(page);
+  const genders = page.getByRole('group', { name: 'Gender', exact: true });
+  for (const option of initial.identity_options.gender) {
+    const card = genders.locator('label').filter({ has: page.getByRole('radio', { name: option.label, exact: true }) });
+    await expect(card.locator(`[data-gender-model="${option.value}"]`)).toBeVisible();
+  }
   for (const [key, label] of [['skin_tone', 'Skin tone'], ['eye_color', 'Eye color'], ['hair_color', 'Hair color']]) {
     const group = page.getByRole('group', { name: label, exact: true });
     for (const option of initial.identity_options[key]) {
