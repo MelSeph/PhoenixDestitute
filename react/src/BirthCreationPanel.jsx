@@ -34,6 +34,7 @@ export default function BirthCreationPanel({ readUrl = endpoint, disabled = fals
   const [status, setStatus] = useState('Loading your birth draft…');
   const [identity, setIdentity] = useState(null);
   const [review, setReview] = useState(null);
+  const [openSection, setOpenSection] = useState('name');
   // Block a second click immediately, before React has rendered disabled controls.
   const pending = useRef(false);
 
@@ -41,6 +42,7 @@ export default function BirthCreationPanel({ readUrl = endpoint, disabled = fals
     setDraft(next);
     setIdentity(next?.identity ?? null);
     setReview(null);
+    setOpenSection(next?.identity_complete ? 'stats' : next?.identity?.name ? 'appearance' : 'name');
     setMissing(next === null);
     setReady(next !== null);
     setStatus(next?.birth ? `Welcome, ${next.identity.name}. Your first life has begun.` : next ? message : 'Choose your starting attributes before your first birth.');
@@ -72,7 +74,7 @@ export default function BirthCreationPanel({ readUrl = endpoint, disabled = fals
     if (draft?.birth) return;
     pending.current = true;
     setBusy(true); setReady(false); setMissing(false);
-    setStatus(action === 'reroll' ? 'Rolling unlocked attributes…' : 'Saving your birth draft…');
+    setStatus(action === 'reroll' ? 'Rolling unlocked attributes…' : action === 'name' ? 'Saving your name…' : action === 'appearance' ? 'Saving your appearance…' : action === 'allocation' ? 'Saving your stat allocation…' : 'Saving your birth draft…');
     try {
       if (!csrfToken()) {
         const response = await fetch('/prototype/', { credentials: 'same-origin' });
@@ -80,12 +82,16 @@ export default function BirthCreationPanel({ readUrl = endpoint, disabled = fals
       }
       if (!csrfToken()) throw new Error('Cookies are required to save a birth draft.');
       const body = action === 'start' ? {} : { revision: draft.revision };
-      if (action === 'locks') body.locked_stats = value;
-      if (action === 'identity') body.identity = identity;
-      const next = await fetchDraft(endpoint + (action === 'start' ? '' : action + '/'), {
+      if (['locks', 'allocation'].includes(action)) body.locked_stats = value;
+      if (['identity', 'name', 'appearance'].includes(action)) body.identity = identity;
+      const endpointAction = ['name', 'appearance'].includes(action) ? 'identity' : action === 'allocation' ? 'locks' : action;
+      const next = await fetchDraft(endpoint + (action === 'start' ? '' : endpointAction + '/'), {
         method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken() }, body: JSON.stringify(body),
       });
-      show(next, action === 'reroll' ? 'Unlocked attributes rerolled. Locked attributes were preserved.' : 'Your starting attributes are saved.');
+      show(next, action === 'reroll' ? 'Unlocked attributes rerolled. Locked attributes were preserved.' : action === 'name' ? 'Name saved.' : action === 'appearance' ? 'Appearance saved.' : action === 'allocation' ? 'Stat allocation saved.' : 'Your starting attributes are saved.');
+      if (action === 'name') setOpenSection('appearance');
+      if (action === 'appearance') setOpenSection('stats');
+      if (action === 'allocation') setReview(next);
       if (action === 'confirm') onConfirmed?.();
     } catch (error) {
       if (error.status === 409) {
@@ -125,7 +131,7 @@ export default function BirthCreationPanel({ readUrl = endpoint, disabled = fals
         </button>
         <span className="stat-tooltip" id="baseline-condition-note" role="tooltip">Baseline Condition describes your starting physical condition. Your wellbeing will also depend on hunger, fatigue, illness, and injuries.</span>
       </span>}{label}</span><output aria-label={`${label} value`}>{draft.stats[key]}</output>
-      {!frozen && <label className="stat-lock"><input type="checkbox" aria-label={`Lock ${label}`} checked={locks.includes(key)} disabled={working || !ready || dirty || (!locks.includes(key) && locks.length >= 3)} onChange={() => toggleLock(key)} />Lock</label>}
+      {!frozen && <label className="stat-lock"><input type="checkbox" aria-label={`${locks.includes(key) ? 'Unlock' : 'Lock'} ${label}`} checked={locks.includes(key)} disabled={working || !ready || dirty || (!locks.includes(key) && locks.length >= 3)} onChange={() => toggleLock(key)} /><svg viewBox="0 0 24 24" aria-hidden="true">{locks.includes(key) ? <><rect x="4" y="10" width="16" height="11" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /></> : <><rect x="4" y="10" width="16" height="11" rx="2" /><path d="M8 10V7a4 4 0 0 1 7-2" /></>}</svg></label>}
     </div>)}
   </fieldset>;
 
@@ -138,9 +144,19 @@ export default function BirthCreationPanel({ readUrl = endpoint, disabled = fals
       {frozen && <><h3>{draft.identity.name} · <span className="gender-heading"><GenderModelIcon gender={draft.identity.gender} />{genderLabel}</span> · <span className="age-heading"><AgeStateIcon stage={draft.birth.life_stage} />{ageStageLabel(draft.birth.life_stage)}</span></h3><p>Character ID: {draft.birth.character_id}</p>
         <details className="sheet-section"><summary>Body</summary><AppearanceSummary identity={draft.identity} options={draft.identity_options} showIdentity={false} /></details>
         <p>Your birth choices are confirmed. Training and age progression are not available yet.</p></>}
-      {!frozen && identity && draft.identity_options && <BirthIdentityForm identity={identity} options={draft.identity_options} disabled={working || !ready} dirty={dirty} onChange={setIdentity} onSave={() => write('identity')} />}
-      {frozen ? <details className="sheet-section"><summary>Attributes</summary>{attributeRows}</details> : attributeRows}
-      {!frozen && <div className="actions"><button disabled={working || !ready || dirty} onClick={() => write('reroll')}>Reroll unlocked attributes</button></div>}
+      {!frozen && identity && draft.identity_options && <>
+        <details className="sheet-section creation-section" open={openSection === 'name'} onClick={event => { if (event.target.closest('summary')) setOpenSection(openSection === 'name' ? '' : 'name'); }}>
+          <summary>Name</summary><BirthIdentityForm mode="name" identity={identity} options={draft.identity_options} disabled={working || !ready} dirty={dirty} onChange={setIdentity} onSave={() => write('name')} />
+        </details>
+        {draft.identity.name && <details className="sheet-section creation-section" open={openSection === 'appearance'} onClick={event => { if (event.target.closest('summary')) setOpenSection(openSection === 'appearance' ? '' : 'appearance'); }}>
+          <summary>Appearance</summary><BirthIdentityForm mode="appearance" identity={identity} options={draft.identity_options} disabled={working || !ready} dirty={dirty} onChange={setIdentity} onSave={() => write('appearance')} />
+        </details>}
+        {draft.identity_complete && <details className="sheet-section creation-section" open={openSection === 'stats'} onClick={event => { if (event.target.closest('summary')) setOpenSection(openSection === 'stats' ? '' : 'stats'); }}>
+          <summary>Stat Allocation</summary>{attributeRows}
+          <div className="actions"><button disabled={working || !ready || dirty} onClick={() => write('reroll')}>Reroll unlocked attributes</button><button disabled={working || !ready || dirty} onClick={() => write('allocation', locks)}>Save Stat Allocation</button></div>
+        </details>}
+      </>}
+      {frozen && <details className="sheet-section"><summary>Attributes</summary>{attributeRows}</details>}
       {showStartingResources && <section aria-labelledby="resources-heading"><h3 id="resources-heading">Starting resources</h3>
         <div className="birth-resources">{Object.entries(resourceLabels).map(([key, [label, parent]]) => <div className="resource-preview" key={key}>
           <h4>{label}</h4><output aria-label={`${label} preview`}>{draft.resources[key].current} / {draft.resources[key].maximum}</output><p className="help">{parent} × 10 · Starts full</p>
@@ -148,8 +164,7 @@ export default function BirthCreationPanel({ readUrl = endpoint, disabled = fals
       </section>}
       {!frozen && <div className="birth-confirmation">
         {draft.confirmation_blocked_reason && <p role="note">{draft.confirmation_blocked_reason}</p>}
-        <button disabled={working || !ready || dirty || !draft.identity_complete || Boolean(draft.confirmation_blocked_reason)} onClick={() => setReview(draft)}>Review birth</button>
-        <p className="help">Save a name, gender, and all applicable looks before reviewing. Confirmation makes your birth choices permanent.</p>
+        <p className="help">Save your name and appearance, then save your stat allocation to review your birth. Confirmation makes your birth choices permanent.</p>
       </div>}
     </>}
     <div className="actions"><button className="secondary" disabled={working} onClick={() => { if (!dirty || window.confirm('Discard unsaved identity changes and reload the saved draft?')) load(); }}>{frozen ? 'Reload character' : 'Reload draft'}</button>

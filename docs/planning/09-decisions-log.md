@@ -380,3 +380,6 @@ The user requested that the landing page contain only sign-in/account creation a
 # Age-stage roster and sheet visuals — 2026-11-16
 
 The roster includes saved birth gender and life stage, allowing Choose a character to show the same Name · Gender · Age pattern as the Character Sheet. The age-state icon set covers baby, toddler, kid, young adult, adult, middle age, elderly, and deceased. The existing newborn stage uses the baby icon and keeps its Newborn label. Characters whose older records lack identity or age show unavailable labels rather than guessed values. See [36-age-stage-character-display.md](36-age-stage-character-display.md).
+# Sequential birth creation — 2026-11-16
+
+The user requested a staged creation flow: Name, then Appearance, then Stat Allocation, with completed sections collapsed but editable. Each stage becomes available after saving the preceding one. Stat controls show lock/unlock icons while retaining accessible checkbox input. Saving Stat Allocation opens the existing birth review automatically; no separate Review birth button is needed. See [37-sequential-birth-creation.md](37-sequential-birth-creation.md).

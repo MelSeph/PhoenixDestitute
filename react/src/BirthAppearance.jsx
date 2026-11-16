@@ -68,7 +68,7 @@ export function AppearanceSummary({ identity, options, showIdentity = true }) {
   </dl>;
 }
 
-export function BirthIdentityForm({ identity, options, disabled, dirty, onChange, onSave }) {
+export function BirthIdentityForm({ identity, options, disabled, dirty, onChange, onSave, mode = 'appearance' }) {
   function change(key, value) {
     const next = { ...identity, [key]: value };
     if (key === 'gender' && value !== 'custom') next.custom_gender = '';
@@ -76,13 +76,11 @@ export function BirthIdentityForm({ identity, options, disabled, dirty, onChange
     onChange(next);
   }
   return <form className="birth-identity" onSubmit={event => { event.preventDefault(); onSave(); }}>
-    <h3>Identity and looks</h3>
-    <p className="help">Choose your appearance. These choices do not change your starting attributes. Illustrations show hair length; texture is chosen separately.</p>
-    <fieldset disabled={disabled} className="identity-fields">
-      <legend>Name</legend>
+    {mode === 'appearance' && <p className="help">Choose your appearance. These choices do not change your starting attributes. Illustrations show hair length; texture is chosen separately.</p>}
+    {mode === 'name' && <fieldset disabled={disabled} className="identity-fields">
       <label htmlFor="birth-name">Name</label><input id="birth-name" value={identity.name} maxLength={100} autoComplete="off" onChange={event => change('name', event.target.value)} />
-    </fieldset>
-    <fieldset disabled={disabled} className="appearance-choices gender-choices">
+    </fieldset>}
+    {mode === 'appearance' && <><fieldset disabled={disabled} className="appearance-choices gender-choices">
       <legend>Gender</legend><div className="choice-grid">{options.gender.map(option => <label className="choice-card" key={option.value}>
         <input type="radio" name="birth-gender" value={option.value} checked={identity.gender === option.value} onChange={() => change('gender', option.value)} />
         <GenderModelIcon gender={option.value} /><span>{option.label}</span>
@@ -97,8 +95,8 @@ export function BirthIdentityForm({ identity, options, disabled, dirty, onChange
         {key === 'hair_texture' && <HairTexturePreview texture={option.value} hair={choice(options, 'hair_color', identity.hair_color)?.color} />}
         <span>{option.label}</span>
       </label>)}</div>
-    </fieldset>)}
-    <p className="help" role="status">{dirty ? 'You have unsaved identity or appearance changes. Save them before rolling or reviewing your birth.' : 'Identity and appearance match your saved draft.'}</p>
-    <button type="submit" disabled={disabled || !dirty}>Save identity and looks</button>
+    </fieldset>)}</>}
+    {mode === 'appearance' && <p className="help" role="status">{dirty ? 'You have unsaved identity or appearance changes. Save them before rolling or reviewing your birth.' : 'Identity and appearance match your saved draft.'}</p>}
+    <button type="submit" disabled={disabled || !dirty || (mode === 'name' && !identity.name.trim())}>{mode === 'name' ? 'Save name' : 'Save appearance'}</button>
   </form>;
 }
