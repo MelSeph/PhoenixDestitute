@@ -8,6 +8,8 @@ The Character Sheet omits the birth-draft helper sentence “These are your conf
 
 The Body details omit Name and Gender because the name is already shown in the sheet heading. The heading displays the saved gender between the name and age state.
 
+The Character Sheet does not repeat Hair color as its own row; the selected color is shown in the Hair length portrait. Hair Texture has an SVG swatch model for each texture, colored with the selected hair color, in both the Character Sheet and birth choices.
+
 The first attribute row has no top separator; row separators begin after Luck.
 
 ## Pane navigation

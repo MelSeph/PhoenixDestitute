@@ -16,6 +16,22 @@ export function HairPreview({ length, hair = '#493025', skin = '#c58c63' }) {
   </svg>;
 }
 
+export function HairTexturePreview({ texture, hair = '#493025' }) {
+  const strand = {
+    straight: 'M6 6C5 20 7 40 6 54',
+    wavy: 'M6 6C13 12-1 18 6 24S13 36 6 42S-1 50 6 54',
+    curly: 'M6 6C15 8 13 15 6 17S-1 26 6 29S15 37 6 40S-1 49 6 54',
+    coily: 'M6 6C12 7 12 12 6 13S0 19 6 20S12 26 6 27S0 33 6 34S12 40 6 41S0 47 6 48S12 52 6 54',
+  }[texture] ?? 'M6 6C5 20 7 40 6 54';
+  return <svg viewBox="0 0 78 60" className="hair-texture-preview" aria-hidden="true" data-hair-texture={texture}>
+    <rect x="1" y="1" width="76" height="58" rx="10" fill="#ede8df" />
+    {[12, 23, 34, 45, 56].map(x => <g key={x} transform={`translate(${x} 0)`}>
+      <path d={strand} fill="none" stroke="#292324" strokeWidth="8" strokeLinecap="round" />
+      <path d={strand} fill="none" stroke={hair} strokeWidth="5" strokeLinecap="round" />
+    </g>)}
+  </svg>;
+}
+
 function ColorVisual({ field, color }) {
   return field === 'eye_color'
     ? <svg viewBox="0 0 60 36" className="eye-swatch" aria-hidden="true" data-color={color}><path d="M2 18Q30-12 58 18Q30 48 2 18Z" fill="#f6f2e9" stroke="#383333" strokeWidth="2" /><circle cx="30" cy="18" r="12" fill={color} /><circle cx="30" cy="18" r="5" fill="#171415" /><circle cx="33" cy="14" r="2" fill="#fff" /></svg>
@@ -28,11 +44,12 @@ export function AppearanceSummary({ identity, options, showIdentity = true }) {
   return <dl className="identity-summary">
     {showIdentity && <><dt>Name</dt><dd>{identity.name}</dd>
       <dt>Gender</dt><dd>{identity.gender === 'custom' ? identity.custom_gender : choice(options, 'gender', identity.gender)?.label}</dd></>}
-    {Object.entries(identityLabels).filter(([key]) => identity.hair_length !== 'bald' || !['hair_color', 'hair_texture'].includes(key)).map(([key, label]) => {
+    {Object.entries(identityLabels).filter(([key]) => (showIdentity || key !== 'hair_color') && (identity.hair_length !== 'bald' || !['hair_color', 'hair_texture'].includes(key))).map(([key, label]) => {
       const selected = choice(options, key, identity[key]);
       return <React.Fragment key={key}><dt>{label}</dt><dd>
         {selected?.color && <ColorVisual field={key} color={selected.color} />}
         {key === 'hair_length' && <HairPreview length={identity.hair_length} hair={choice(options, 'hair_color', identity.hair_color)?.color} skin={choice(options, 'skin_tone', identity.skin_tone)?.color} />}
+        {key === 'hair_texture' && <HairTexturePreview texture={identity.hair_texture} hair={choice(options, 'hair_color', identity.hair_color)?.color} />}
         {selected?.label}
       </dd></React.Fragment>;
     })}
@@ -62,6 +79,7 @@ export function BirthIdentityForm({ identity, options, disabled, dirty, onChange
         <input type="radio" name={`birth-${key}`} value={option.value} checked={identity[key] === option.value} onChange={() => change(key, option.value)} />
         {option.color && <ColorVisual field={key} color={option.color} />}
         {key === 'hair_length' && <HairPreview length={option.value} hair={choice(options, 'hair_color', identity.hair_color)?.color} skin={choice(options, 'skin_tone', identity.skin_tone)?.color} />}
+        {key === 'hair_texture' && <HairTexturePreview texture={option.value} hair={choice(options, 'hair_color', identity.hair_color)?.color} />}
         <span>{option.label}</span>
       </label>)}</div>
     </fieldset>)}

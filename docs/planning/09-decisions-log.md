@@ -346,6 +346,8 @@ The user requested removing the inner duplicate “Attributes” label from the 
 
 The user requested removing Name and Gender from Body details, then placing Gender between Name and age state in the sheet heading. Birth review continues to show identity details.
 
+The user requested removing the Hair color row from the Character Sheet because its color is already visible on the Hair length portrait, and requested a visual model for Hair Texture. The sheet retains hair color in the portrait, while a texture swatch model shows the selected texture in that color.
+
 ## Save access after browser restart — 2026-11-15
 
 The user reported save loading failing after closing/reopening the same normal browser/address. Confirmed a shared admin/game session lifecycle bug, rather than a browser-close cookie-expiry default. Isolated admin into its own cookie, retained persistent game cookies, and added validated compatibility handling for old shared staff sessions without claiming unrelated orphaned characters. See [30-session-persistence.md](30-session-persistence.md). All 309 Django tests and 9 relevant browser cases pass, including an actual persistent-profile browser process restart. No migration, account/password changes, live-data reset, commit, or push.
